@@ -68,6 +68,10 @@ const PN_OTRO = `6${n}4`;
 const WABA_VARIOS = `6${n}5`;
 const WABA_UI = `6${n}6`;
 const PN_UI = `6${n}7`;
+const WABA_COEX = `6${n}8`;
+const PN_COEX = `6${n}9`;
+const WABA_UI_COEX = `7${n}1`;
+const PN_UI_COEX = `7${n}2`;
 
 const sembrar = (wabaId, numeros) =>
   api("/api/dev/wa-mock/embedded", {
@@ -157,6 +161,24 @@ async function porApi() {
   );
   ok("override en el número", String(hooks.phoneWebhooks?.[PN] ?? "").includes("/api/webhooks/wa/"));
 
+  console.log("\n== Coexistencia: el número sigue en la app del celular ==");
+  await sembrar(WABA_COEX, [
+    { id: PN_COEX, display_phone_number: "+57 314 000 0000", verified_name: "Coex E2E", status: "CONNECTED" },
+  ]);
+  const codeCoex = `es-code-coex-${n}`;
+  const rc = await alta({ code: codeCoex, wabaId: WABA_COEX, phoneNumberId: PN_COEX, pin: null, coexistence: true });
+  ok("POST con coexistence: true responde 200 conectado", rc.res.status === 200 && rc.json?.connected === true && rc.json?.coexistence === true, `${rc.res.status} ${JSON.stringify(rc.json)}`);
+  ok("no registró el número ni generó PIN", rc.json?.registered === false && rc.json?.generatedPin === undefined, JSON.stringify(rc.json));
+  const mockCoex = (await api("/api/dev/wa-mock/embedded")).json;
+  ok("«Meta» no recibió /register para el número de la app", !mockCoex?.registrations?.[PN_COEX], JSON.stringify(mockCoex?.registrations));
+  const cc = await conexion();
+  ok("la conexión guardada es la del número de la app", cc?.wabaId === WABA_COEX && cc?.phoneNumberId === PN_COEX && cc?.status === "connected", JSON.stringify(cc));
+  const hooksCoex = (await api("/api/dev/wa-mock/webhooks")).json ?? {};
+  ok("override del webhook en el número de la app", String(hooksCoex.phoneWebhooks?.[PN_COEX] ?? "").includes("/api/webhooks/wa/"));
+
+  // Se devuelve la conexión al número de la parte anterior para lo que sigue.
+  await alta({ code: `es-code-back-${n}`, wabaId: WABA, phoneNumberId: PN, pin: "123456" });
+
   console.log("\n== Un mensaje real entra por el número conectado ==");
   const tel = `51955${n.slice(-6)}`;
   const texto = `Hola desde el Embedded Signup ${n}`;
@@ -212,9 +234,12 @@ const SDK_FALSO = `
       window.__fb.login = o;
       const f = document.createElement("iframe");
       f.style.display = "none";
-      f.src = "https://www.facebook.com/__vocero_e2e_es";
+      f.src = o?.extras?.featureType === "whatsapp_business_app_onboarding"
+        ? "https://www.facebook.com/__vocero_e2e_coex"
+        : "https://www.facebook.com/__vocero_e2e_es";
       document.body.appendChild(f);
-      setTimeout(() => cb({ authResponse: { code: "es-code-ui-${n}" } }), 800);
+      const codigo = o?.extras?.featureType ? "es-code-ui-coex-${n}" : "es-code-ui-${n}";
+      setTimeout(() => cb({ authResponse: { code: codigo } }), 800);
     },
   };
 `;
@@ -226,9 +251,20 @@ const IFRAME_DE_META = `<!doctype html><script>
   }), "*");
 </script>`;
 
+const IFRAME_DE_META_COEX = `<!doctype html><script>
+  parent.postMessage(JSON.stringify({
+    type: "WA_EMBEDDED_SIGNUP",
+    event: "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING",
+    data: { waba_id: "${WABA_UI_COEX}", phone_number_id: "${PN_UI_COEX}" }
+  }), "*");
+</script>`;
+
 async function enElNavegador() {
   console.log("\n== En el navegador: el botón «Conectar con Meta» ==");
   await sembrar(WABA_UI, [{ id: PN_UI, display_phone_number: "+51 977 777 777", verified_name: "Negocio UI" }]);
+  await sembrar(WABA_UI_COEX, [
+    { id: PN_UI_COEX, display_phone_number: "+57 314 111 1111", verified_name: "Coex UI", status: "CONNECTED" },
+  ]);
 
   const candidatos = [
     "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -249,6 +285,9 @@ async function enElNavegador() {
     );
     await ctx.route("https://www.facebook.com/__vocero_e2e_es", (route) =>
       route.fulfill({ contentType: "text/html", body: IFRAME_DE_META })
+    );
+    await ctx.route("https://www.facebook.com/__vocero_e2e_coex", (route) =>
+      route.fulfill({ contentType: "text/html", body: IFRAME_DE_META_COEX })
     );
     ctx.setDefaultNavigationTimeout(120000);
     ctx.setDefaultTimeout(30000);
@@ -285,6 +324,21 @@ async function enElNavegador() {
     ok("el banner de conexión se actualiza sin recargar", true);
     const c = await conexion();
     ok("y la conexión guardada es la del popup", c?.phoneNumberId === PN_UI && c?.wabaId === WABA_UI, JSON.stringify(c));
+
+    console.log("\n== En el navegador: «Conectar el WhatsApp Business del celular» ==");
+    const botonApp = page.getByRole("button", { name: "Conectar el WhatsApp Business del celular" });
+    ok("el botón de coexistencia aparece", await botonApp.isVisible());
+    await botonApp.click();
+    const exitoApp = page.getByRole("status").filter({ hasText: "Conectado +57 314 111 1111" });
+    await exitoApp.waitFor({ timeout: 60000 });
+    ok("el alta por coexistencia termina y lo dice", (await exitoApp.textContent())?.includes("WhatsApp Business del celular") === true, await exitoApp.textContent());
+    const opcApp = await page.evaluate(() => window.__fb.login);
+    ok("FB.login pidió featureType whatsapp_business_app_onboarding", opcApp?.extras?.featureType === "whatsapp_business_app_onboarding", JSON.stringify(opcApp));
+    ok("no muestra PIN", !/PIN de verificación en dos pasos del número/.test((await exitoApp.textContent()) ?? ""));
+    const mockUi = (await api("/api/dev/wa-mock/embedded")).json;
+    ok("no se llamó /register para el número de la app", !mockUi?.registrations?.[PN_UI_COEX]);
+    const c2 = await conexion();
+    ok("la conexión guardada es la del celular", c2?.phoneNumberId === PN_UI_COEX && c2?.wabaId === WABA_UI_COEX, JSON.stringify(c2));
   } catch (err) {
     ok("flujo del navegador sin excepciones", false, err instanceof Error ? err.message : String(err));
   } finally {

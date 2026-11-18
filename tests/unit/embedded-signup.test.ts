@@ -130,7 +130,13 @@ describe("el evento de sesión de Meta", () => {
     expect(leerEventoDeAlta(FB, ev("ERROR", { error_message: "falló" }))).toEqual({ kind: "error", message: "falló" });
     expect(leerEventoDeAlta(FB, ev("FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING", { waba_id: "1" }))).toEqual({
       kind: "coexistence",
+      wabaId: "1",
+      phoneNumberId: null,
     });
+    expect(
+      leerEventoDeAlta(FB, ev("FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING", { waba_id: "1", phone_number_id: "2" }))
+    ).toEqual({ kind: "coexistence", wabaId: "1", phoneNumberId: "2" });
+    expect(leerEventoDeAlta(FB, ev("FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING", {}))).toMatchObject({ kind: "error" });
   });
 
   it("ignora otros orígenes, otros mensajes y IDs que no son números", () => {
@@ -147,6 +153,12 @@ describe("el evento de sesión de Meta", () => {
       response_type: "code",
       override_default_response_type: true,
       extras: { setup: {}, sessionInfoVersion: "3", version: "v4" },
+    });
+    expect(opcionesDeLogin("998877", "app").extras).toEqual({
+      setup: {},
+      featureType: "whatsapp_business_app_onboarding",
+      sessionInfoVersion: "3",
+      version: "v4",
     });
     expect(opcionesDeInit("1715957376325225", "v25.0")).toMatchObject({
       appId: "1715957376325225",
@@ -228,6 +240,23 @@ describe("el alta en el servidor", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(r2).toMatchObject({ registered: false });
     expect(r2.generatedPin).toBeUndefined();
+  });
+
+  it("coexistencia: no llama a /register ni genera PIN, pero guarda y registra el webhook", async () => {
+    respond({ data: [numero("555", { status: "CONNECTED" })] });
+    const r = await completarAltaEmbebida({ ...input, pin: "123456", coexistence: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/register"))).toBe(false);
+    expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: "555", wabaId: "160228957180064" }));
+    expect(mocks.webhook).toHaveBeenCalledWith(expect.objectContaining({ phoneNumberId: "555" }));
+    expect(r).toMatchObject({ registered: false, coexistence: true });
+    expect(r.generatedPin).toBeUndefined();
+
+    fetchMock.mockReset();
+    respond({ data: [numero("555", { status: "PENDING" })] });
+    const r2 = await completarAltaEmbebida({ ...input, code: "code-2", coexistence: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(r2).toMatchObject({ registered: false, coexistence: true });
   });
 
   it("sin phone_number_id usa el único número; con varios falla sin guardar (CA-3)", async () => {
@@ -320,6 +349,16 @@ describe("la ruta /api/settings/whatsapp/embedded", () => {
     expect(data).toMatchObject({ connected: true, phoneNumberId: "555", registered: true, webhook: WEBHOOK_OK });
     expect(data.generatedPin).toMatch(/^\d{6}$/);
     expect(JSON.stringify(data)).not.toContain("EAAG-del-cliente");
+  });
+
+  it("con coexistence: true completa el alta sin registrar ni PIN", async () => {
+    respond({ data: [numero("555", { status: "CONNECTED" })] });
+    const res = await post({ ...valido, coexistence: true });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data).toMatchObject({ connected: true, registered: false, coexistence: true });
+    expect(data.generatedPin).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("un fallo de Meta vuelve como error legible, sin guardar", async () => {

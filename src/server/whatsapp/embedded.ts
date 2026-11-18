@@ -14,10 +14,15 @@ import { webhookUrl, webhookVerifyToken } from "@/server/whatsapp/webhook-url";
 /**
  * 066 — «Conectar con Meta» (Embedded Signup v4), del lado del servidor.
  *
- * Puerto de la spec 104 del fork de un cliente, sin la coexistencia:
+ * Puerto de la spec 104 del fork de un cliente:
  *
  *   canje del `code` → número de la WABA → registro con PIN →
  *   credenciales cifradas → webhook (cuenta de WhatsApp, de mensajes y número)
+ *
+ * Con coexistencia (el número sigue en la app WhatsApp Business del
+ * teléfono) NO se llama a `/register`: el número ya está registrado en la
+ * app y Meta lo conecta a la Cloud API en la ventana. Lo que el dueño escriba
+ * desde el teléfono llega como `smb_message_echoes` (008) y pausa la IA.
  *
  * Regla de esta frontera: ni el `code`, ni el token, ni el secreto, ni el
  * error crudo de Meta salen de aquí. Todo fallo es un `EmbeddedSignupError`
@@ -247,6 +252,8 @@ export type ResultadoAlta = {
    * en esta respuesta: no se guarda ni se registra en logs.
    */
   generatedPin?: string;
+  /** true si el número sigue también en la app WhatsApp Business del teléfono. */
+  coexistence: boolean;
   webhook: WebhookRegistration;
 };
 
@@ -257,11 +264,13 @@ export async function completarAltaEmbebida(input: {
   phoneNumberId: string | null;
   /** El PIN que ya tenía el número; sin él, se genera uno. */
   pin: string | null;
+  /** true = coexistencia con la app WhatsApp Business del teléfono. */
+  coexistence?: boolean;
 }): Promise<ResultadoAlta> {
   const token = await canjearCodigo(input.code);
   const numero = await resolverNumero(token, input.wabaId, input.phoneNumberId);
   const pin = input.pin ?? generarPin();
-  const registered = await registrarNumero(token, numero, pin);
+  const registered = input.coexistence ? false : await registrarNumero(token, numero, pin);
 
   // 065 — Best-effort: sin ella, el dueño la escribe en el formulario manual.
   const messagingAccountId = await descubrirCuentaDeMensajes(input.wabaId, token);
@@ -291,6 +300,7 @@ export async function completarAltaEmbebida(input: {
     phoneNumberId: numero.id,
     messagingAccountId,
     registered,
+    coexistence: Boolean(input.coexistence),
     ...(registered && !input.pin ? { generatedPin: pin } : {}),
     webhook,
   };

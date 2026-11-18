@@ -1,6 +1,6 @@
 # Guion E2E — 066: «Conectar con Meta» (Embedded Signup v4)
 
-> Automatizado en `scripts/e2e-embedded-signup.mjs` (31 checks):
+> Automatizado en `scripts/e2e-embedded-signup.mjs` (42 checks):
 > `pnpm test:e2e:embedded-signup` con la app viva, el wa-mock encendido y
 > `META_APP_ID` + `META_EMBEDDED_CONFIG_ID` + `META_APP_SECRET` en el entorno.
 
@@ -23,6 +23,17 @@ responda `#100/2388339`, como desde el 28-oct-2026.
    ✅ Override de la instancia en la Cuenta de mensajes y en el número.
 3. Un entrante al número conectado.
    ✅ El contacto aparece en el CRM.
+
+## Coexistencia (el número sigue en la app WhatsApp Business del celular)
+
+- `POST` con `coexistence: true` y un número `CONNECTED` de la app.
+  ✅ 200 conectado, `registered: false`, sin PIN; «Meta» no recibió
+  `/register`; la conexión guardada y el webhook son los de ese número.
+- En el navegador, «Conectar el WhatsApp Business del celular» pide
+  `featureType: whatsapp_business_app_onboarding`, recibe
+  `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING` y conecta sin mostrar PIN.
+- Lo que el dueño escribe desde el teléfono entra como `smb_message_echoes`
+  y pausa la IA (ya cubierto por 008).
 
 ## Caminos infelices (la conexión buena no cambia)
 

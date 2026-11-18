@@ -2,12 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { CheckCircle2, KeyRound, ShieldCheck } from "lucide-react";
+import { CheckCircle2, KeyRound, ShieldCheck, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { leerEventoDeAlta, opcionesDeInit, opcionesDeLogin } from "@/lib/meta/signup-event";
+import {
+  leerEventoDeAlta,
+  opcionesDeInit,
+  opcionesDeLogin,
+  type ModoDeAlta,
+} from "@/lib/meta/signup-event";
 
 /**
  * 066 — «Conectar con Meta» (Embedded Signup v4).
@@ -34,12 +39,13 @@ type Facebook = {
 type Pendiente = {
   pin: string | null;
   code?: string;
-  evento?: { wabaId: string; phoneNumberId: string | null };
+  evento?: { wabaId: string; phoneNumberId: string | null; coexistence: boolean };
   enviando: boolean;
 };
 export type ResultadoEmbebido = {
   displayPhoneNumber: string;
   generatedPin?: string;
+  coexistence?: boolean;
   webhook: unknown;
 };
 
@@ -96,7 +102,9 @@ export function EmbeddedSignup({
           code: p.code,
           wabaId: p.evento.wabaId,
           phoneNumberId: p.evento.phoneNumberId,
-          pin: p.pin,
+          // Con coexistencia el número no se registra: el PIN no aplica.
+          pin: p.evento.coexistence ? null : p.pin,
+          coexistence: p.evento.coexistence,
         }),
         signal: AbortSignal.timeout(120_000),
       });
@@ -129,12 +137,11 @@ export function EmbeddedSignup({
       if (e.kind === "error") {
         return fallar(`Meta reportó un error${e.message ? `: ${e.message}` : ""}. Puedes volver a intentarlo.`);
       }
-      if (e.kind === "coexistence") {
-        return fallar(
-          "En Meta se eligió conectar la app de WhatsApp Business del teléfono (coexistencia), que esta versión no admite. No se guardó nada."
-        );
-      }
-      activo.current.evento = { wabaId: e.wabaId, phoneNumberId: e.phoneNumberId };
+      activo.current.evento = {
+        wabaId: e.wabaId,
+        phoneNumberId: e.phoneNumberId,
+        coexistence: e.kind === "coexistence",
+      };
       void enviar();
     };
     window.addEventListener("message", recibir);
@@ -150,9 +157,9 @@ export function EmbeddedSignup({
 
   const pinValido = pin === "" || /^\d{6}$/.test(pin);
 
-  function lanzar() {
+  function lanzar(modo: ModoDeAlta) {
     const f = fb();
-    if (!f || !config?.configId || !pinValido || activo.current) return;
+    if (!f || !config?.configId || (modo === "nuevo" && !pinValido) || activo.current) return;
     const p: Pendiente = { pin: pin || null, enviando: false };
     activo.current = p;
     setBusy(true);
@@ -168,7 +175,7 @@ export function EmbeddedSignup({
         if (!r.authResponse?.code) return fallar("Meta no autorizó la conexión. Puedes volver a intentarlo.");
         p.code = r.authResponse.code;
         void enviar();
-      }, opcionesDeLogin(config.configId));
+      }, opcionesDeLogin(config.configId, modo));
     } catch {
       fallar("No se pudo abrir Meta. Permite las ventanas emergentes y vuelve a intentarlo.");
     }
@@ -225,9 +232,20 @@ export function EmbeddedSignup({
               </p>
             </div>
 
-            <Button disabled={!sdk || busy || !pinValido} onClick={lanzar}>
-              {busy ? "Completando la conexión…" : "Conectar con Meta"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button disabled={!sdk || busy || !pinValido} onClick={() => lanzar("nuevo")}>
+                {busy ? "Completando la conexión…" : "Conectar con Meta"}
+              </Button>
+              <Button variant="outline" disabled={!sdk || busy} onClick={() => lanzar("app")}>
+                <Smartphone className="h-4 w-4" /> Conectar el WhatsApp Business del celular
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Si el número ya usa la app WhatsApp Business, elige la segunda
+              opción: la app sigue funcionando en el celular, el agente responde
+              desde el CRM y, cuando contestes desde el teléfono, la IA se pausa
+              en esa conversación. No necesita PIN.
+            </p>
           </>
         )}
 
@@ -242,7 +260,8 @@ export function EmbeddedSignup({
             className="space-y-2 rounded-lg border border-success-soft bg-success-tint p-3 text-success-text"
           >
             <p className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> Conectado {exito.displayPhoneNumber}.
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> Conectado {exito.displayPhoneNumber}
+              {exito.coexistence ? ", sin quitarlo de la app WhatsApp Business del celular." : "."}
             </p>
             {exito.generatedPin && (
               <p className="flex items-start gap-2">

@@ -5,8 +5,9 @@ import { z } from "zod";
  * facebook.com) y las opciones de `FB.login`. Lo lee el navegador; vive en
  * `lib/` porque lo importan la tarjeta y las pruebas.
  *
- * Puerto de la spec 104 del fork de un cliente, sin la coexistencia: un
- * evento de coexistencia se reconoce para poder decir que no se admite.
+ * Puerto de la spec 104 del fork de un cliente. Con la coexistencia (el
+ * número sigue en la app WhatsApp Business del teléfono) Meta cierra con
+ * `FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING`.
  */
 
 const ORIGENES = new Set([
@@ -32,7 +33,7 @@ const eventoSchema = z.object({
 export type EventoDeAlta =
   | { kind: "cancel" }
   | { kind: "error"; message: string | null }
-  | { kind: "coexistence" }
+  | { kind: "coexistence"; wabaId: string; phoneNumberId: string | null }
   | { kind: "finish"; wabaId: string; phoneNumberId: string | null };
 
 export function leerEventoDeAlta(origin: string, raw: unknown): EventoDeAlta | null {
@@ -50,7 +51,10 @@ export function leerEventoDeAlta(origin: string, raw: unknown): EventoDeAlta | n
   const { event, data } = parsed.data;
   if (event === "CANCEL") return { kind: "cancel" };
   if (event === "ERROR") return { kind: "error", message: data?.error_message ?? null };
-  if (event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING") return { kind: "coexistence" };
+  if (event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING") {
+    if (!data?.waba_id) return { kind: "error", message: "Meta no devolvió la cuenta de WhatsApp." };
+    return { kind: "coexistence", wabaId: data.waba_id, phoneNumberId: data.phone_number_id ?? null };
+  }
   if ((event === "FINISH" || event === "FINISH_ONLY_WABA") && data?.waba_id) {
     return { kind: "finish", wabaId: data.waba_id, phoneNumberId: data.phone_number_id ?? null };
   }
@@ -62,12 +66,24 @@ export function leerEventoDeAlta(origin: string, raw: unknown): EventoDeAlta | n
  * para canjearlo en el servidor y los `extras` de v4 (los que lanza la app
  * de referencia oficial de Meta).
  */
-export function opcionesDeLogin(configId: string) {
+export type ModoDeAlta = "nuevo" | "app";
+
+/**
+ * `modo: "app"` pide la coexistencia: el número sigue en la app WhatsApp
+ * Business del teléfono y además entra a la Cloud API
+ * (`featureType: whatsapp_business_app_onboarding`).
+ */
+export function opcionesDeLogin(configId: string, modo: ModoDeAlta = "nuevo") {
   return {
     config_id: configId,
     response_type: "code",
     override_default_response_type: true,
-    extras: { setup: {}, sessionInfoVersion: "3", version: "v4" },
+    extras: {
+      setup: {},
+      ...(modo === "app" ? { featureType: "whatsapp_business_app_onboarding" } : {}),
+      sessionInfoVersion: "3",
+      version: "v4",
+    },
   };
 }
 

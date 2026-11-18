@@ -48,6 +48,8 @@ const inputSchema = z.object({
   phoneNumberId: id.nullable(),
   /** El PIN que ya tenía el número; `null` = que el servidor genere uno. */
   pin: z.string().regex(/^\d{6}$/).nullable(),
+  /** Coexistencia: el número sigue en la app WhatsApp Business del teléfono. */
+  coexistence: z.boolean().optional().default(false),
 });
 
 export const POST = withAuth(async (session, req: Request) => {
