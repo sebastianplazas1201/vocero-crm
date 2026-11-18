@@ -6,6 +6,10 @@ import {
   BRAND_MARK_STROKE,
   BRAND_MARK_TAIL,
   isVoceroName,
+  isEvoiaName,
+  EVOIA_INK,
+  EVOIA_LIME,
+  EVOIA_MARK_PATH,
 } from "@/lib/brand";
 import { faviconHref, faviconInitial } from "@/lib/favicon";
 import { cn } from "@/lib/utils";
@@ -48,6 +52,22 @@ export function BrandMark({
   );
 }
 
+/** La «E» de EVOIA (evoia.tech): trazos lima sobre su cuadro casi negro. */
+export function EvoiaMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true" className={className}>
+      <rect width="32" height="32" rx="8" fill={EVOIA_INK} />
+      <path
+        d={EVOIA_MARK_PATH}
+        stroke={EVOIA_LIME}
+        strokeWidth={3}
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 /**
  * Mosaico cuadrado con degradado del acento: es el favicon en grande. Con un
  * logo subido lleva el logo (el MISMO archivo y la MISMA URL versionada que
@@ -78,6 +98,8 @@ export function BrandTile({
           alt=""
           className="h-full w-full object-contain"
         />
+      ) : isEvoiaName(branding.name) ? (
+        <EvoiaMark className="h-full w-full" />
       ) : isVoceroName(branding.name) ? (
         <BrandMark className="h-[64%] w-[64%]" cyan={BRAND_CYAN_ON_TILE} />
       ) : (
@@ -117,6 +139,21 @@ export function BrandLogo({
   size?: keyof typeof WORDMARK_SIZE;
   className?: string;
 }) {
+  if (isEvoiaName(branding.name) && !branding.favicon) {
+    return (
+      <span className={cn("flex items-center gap-2.5 text-foreground", className)}>
+        <EvoiaMark className={cn("shrink-0", TILE_SIZE[size])} />
+        <span
+          className={cn(
+            "font-[650] leading-none tracking-[-0.02em]",
+            size === "lg" ? "text-[26px]" : "text-[18px]"
+          )}
+        >
+          EVOIA
+        </span>
+      </span>
+    );
+  }
   if (isVoceroName(branding.name) && !branding.favicon) {
     return (
       <span className={cn("flex items-center gap-2 text-foreground", className)}>

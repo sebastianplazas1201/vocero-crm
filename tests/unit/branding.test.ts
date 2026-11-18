@@ -11,7 +11,7 @@ import {
 } from "@/lib/branding";
 
 const DARK_BG = "#1a2320";
-const NAV_BG = "#0b1327";
+const NAV_BG = "#07080c";
 
 /** Contraste WCAG entre dos hex, para afirmar sobre legibilidad y no sobre
  *  valores concretos: lo que importa es que se LEA, no que dé cierto color. */
@@ -63,19 +63,19 @@ describe("white-label: acento", () => {
     expect(lum).toBeLessThan(0xd0);
   });
 
-  it("hex inválido cae al default (el azul Vocero)", () => {
-    expect(resolveAccentSet("rojo")).toEqual(ACCENT_PRESETS["#0d5bff"]!.set);
+  it("hex inválido cae al default (la lima EVOIA)", () => {
+    expect(resolveAccentSet("rojo")).toEqual(ACCENT_PRESETS["#c6ff3d"]!.set);
   });
 
-  it("el azul Vocero es el default y trae los valores exactos de la landing", () => {
-    expect(DEFAULT_BRANDING.accent).toBe("#0d5bff");
+  it("la lima EVOIA es el default y trae los valores de evoia.tech", () => {
+    expect(DEFAULT_BRANDING.accent).toBe("#c6ff3d");
     expect(resolveAccentSet(DEFAULT_BRANDING.accent)).toEqual({
-      accent: "#0d5bff",
-      hover: "#0a4de6",
-      soft: "#d3e2ff",
-      tint: "#ebf1ff",
-      text: "#0038d8",
-      fg: "#ffffff",
+      accent: "#c6ff3d",
+      hover: "#b4f01f",
+      soft: "#e9ffc2",
+      tint: "#f6ffe6",
+      text: "#3d5a00",
+      fg: "#07080c",
     });
   });
 });
@@ -95,8 +95,8 @@ describe("white-label: acento en tema oscuro", () => {
     }
   });
 
-  it("el azul Vocero conserva la tinta blanca en oscuro", () => {
-    expect(resolveAccentSet(DEFAULT_BRANDING.accent, "dark").fg).toBe("#ffffff");
+  it("la lima EVOIA lleva tinta casi negra en oscuro", () => {
+    expect(resolveAccentSet(DEFAULT_BRANDING.accent, "dark").fg).toBe("#0f1419");
   });
 
   it("los presets NO se aplican tal cual: están calculados para fondo blanco", () => {
@@ -109,7 +109,7 @@ describe("white-label: acento en tema oscuro", () => {
 
   it("hex inválido en oscuro también cae al acento por defecto", () => {
     expect(resolveAccentSet("rojo", "dark")).toEqual(
-      resolveAccentSet("#0d5bff", "dark")
+      resolveAccentSet(DEFAULT_BRANDING.accent, "dark")
     );
   });
 
@@ -146,16 +146,14 @@ describe("white-label: barra lateral bicolor (.nav-dark)", () => {
     expect(nav).not.toContain(resolveAccentSet("#3f5972", "light").accent);
   });
 
-  it("con el azul Vocero, la barra se ve como siempre", () => {
-    // La receta de la barra es la de antes: el ítem activo del tema claro no
-    // cambia aunque el tema oscuro de la página sí.
+  it("con la lima EVOIA, la barra la usa tal cual con tinta casi negra", () => {
     expect(resolveNavAccentSet(DEFAULT_BRANDING.accent)).toEqual({
-      accent: "#256bff",
-      hover: "#4883ff",
-      soft: "#122c63",
-      tint: "#0e1e41",
-      text: "#6295ff",
-      fg: "#ffffff",
+      accent: "#c6ff3d",
+      hover: "#cfff5c",
+      soft: "#3c4d1a",
+      tint: "#1e2612",
+      text: "#d6ff73",
+      fg: "#0f1419",
     });
   });
 
@@ -209,14 +207,14 @@ describe("tema oscuro: las superficies se distinguen", () => {
 });
 
 describe("white-label: normalización", () => {
-  it("nombre vacío o nulo → default 'Vocero'; se recorta a 30", () => {
-    expect(normalizeBranding(null).name).toBe("Vocero");
-    expect(normalizeBranding({ name: "   " }).name).toBe("Vocero");
+  it("nombre vacío o nulo → default 'EVOIA'; se recorta a 30", () => {
+    expect(normalizeBranding(null).name).toBe("EVOIA");
+    expect(normalizeBranding({ name: "   " }).name).toBe("EVOIA");
     expect(normalizeBranding({ name: "x".repeat(50) }).name).toHaveLength(30);
   });
 
   it("acento inválido → default", () => {
-    expect(normalizeBranding({ accent: "azul" }).accent).toBe("#0d5bff");
+    expect(normalizeBranding({ accent: "azul" }).accent).toBe("#c6ff3d");
     expect(normalizeBranding({ accent: "#3F6B66" }).accent).toBe("#3f6b66");
   });
 });

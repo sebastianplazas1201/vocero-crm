@@ -13,6 +13,8 @@ import { z } from "zod";
 export type Modo = "light" | "dark";
 
 export const TEMA_IDS = [
+  "evoia",
+  "evoia-claro",
   "menta",
   "noche",
   "vocero",
@@ -35,6 +37,103 @@ export type Tema = {
 };
 
 export const TEMAS: Record<TemaId, Tema> = {
+  // Fork de EVOIA — el estilo de evoia.tech: casi negro, lima y un brillo
+  // violeta. Minimalista: sin dibujos en el fondo del chat y la respuesta
+  // del negocio en lima, como el chat de la web.
+  evoia: {
+    nombre: "EVOIA",
+    descripcion: "Casi negro con lima, como evoia.tech.",
+    modo: "dark",
+    pareja: "evoia-claro",
+    tokens: {
+      "--bg-subtle": "#0b0c11",
+      "--bg": "#16191f",
+      "--row-hover": "#1a1d24",
+      "--bg-raised": "#1d2028",
+      "--chip-bg": "#1f222b",
+      "--bg-panel": "#22262f",
+      "--bg-hover": "#272b35",
+      "--cal-off": "#0b0c11",
+      "--text": "#eef0f5",
+      "--text-2": "#c4c9d4",
+      "--text-3": "#9aa1b0",
+      "--text-4": "#6b7282",
+      "--border": "#3a3f4c",
+      "--border-strong": "#4f5566",
+      "--chat-bg": "#0b0c11",
+      "--chat-dibujos": "none",
+      "--bubble-in": "#1f222b",
+      "--bubble-in-border": "#2c303c",
+      "--bubble-in-text": "#eef0f5",
+      "--bubble-in-muted": "#9aa1b0",
+      "--bubble-in-link": "#d6ff7a",
+      "--bubble-in-raised": "#2a2e38",
+      "--bubble-in-line": "#303543",
+      "--bubble-out": "#c6ff3d",
+      "--bubble-out-border": "#c6ff3d",
+      "--bubble-out-text": "#0a0b0f",
+      "--bubble-out-muted": "#3f4d17",
+      "--bubble-out-link": "#0a0b0f",
+      "--bg-active": "#232b12",
+      "--marco-1": "#030405",
+      "--marco-2": "#05040a",
+      "--riel-activo": "#c6ff3d",
+      "--riel-activo-texto": "#07080c",
+      "--enviar": "#c6ff3d",
+      "--enviar-texto": "#07080c",
+      "--radio-tarjeta": "20px",
+      "--contorno-tarjeta": "1px solid rgba(255,255,255,0.07)",
+      "--sombra-tarjeta": "0 30px 80px -40px rgba(124,92,255,0.35)",
+    },
+  },
+  "evoia-claro": {
+    nombre: "EVOIA claro",
+    descripcion: "La pareja clara: blanco, tinta casi negra y lima.",
+    modo: "light",
+    pareja: "evoia",
+    tokens: {
+      "--bg": "#ffffff",
+      "--bg-subtle": "#f4f5f7",
+      "--bg-panel": "#eef0f3",
+      "--bg-hover": "#e8eaee",
+      "--bg-raised": "#ffffff",
+      "--text": "#07080c",
+      "--text-2": "#3b404b",
+      "--text-3": "#585e6c",
+      "--text-4": "#8c93a3",
+      "--border": "#e4e6eb",
+      "--border-strong": "#d3d6dd",
+      "--chip-bg": "#ffffff",
+      "--row-hover": "#f4f5f7",
+      "--cal-off": "#f4f5f7",
+      "--chat-bg": "#f4f5f7",
+      "--chat-dibujos": "none",
+      "--bubble-in": "#ffffff",
+      "--bubble-in-border": "#cfd3db",
+      "--bubble-in-text": "#07080c",
+      "--bubble-in-muted": "#585e6c",
+      "--bubble-in-link": "#3d5a00",
+      "--bubble-in-raised": "#f4f5f7",
+      "--bubble-in-line": "#e4e6eb",
+      "--bubble-out": "#c6ff3d",
+      "--bubble-out-border": "#b4f01f",
+      "--bubble-out-text": "#0a0b0f",
+      "--bubble-out-muted": "#3f4d17",
+      "--bubble-out-link": "#0a0b0f",
+      "--bg-active": "#e9f8c8",
+      "--marco-1": "#f4f5f7",
+      "--marco-2": "#ebe8f7",
+      "--riel-activo": "#07080c",
+      "--riel-activo-texto": "#c6ff3d",
+      "--enviar": "#07080c",
+      "--enviar-texto": "#c6ff3d",
+      "--radio-tarjeta": "20px",
+      // La lima es para rellenos: como TINTA (un enlace, la etapa activa, el
+      // anillo de foco) sobre blanco no se lee, así que va el oliva oscuro.
+      "--accent-ink": "var(--accent-text)",
+      "--ring": "var(--accent-text)",
+    },
+  },
   menta: {
     nombre: "Menta",
     descripcion: "Tarjetas blancas sobre menta suave. El de siempre.",
@@ -310,6 +409,7 @@ export const TEMAS: Record<TemaId, Tema> = {
 };
 
 export const LETRAS = {
+  grotesk: { nombre: "Space Grotesk", variable: "--font-grotesk" },
   urbanist: { nombre: "Urbanist", variable: "--font-urbanist" },
   archivo: { nombre: "Archivo", variable: "--font-archivo" },
   inter: { nombre: "Inter", variable: "--font-inter" },
@@ -343,8 +443,8 @@ export const aparienciaSchema = z.object({
 export type Apariencia = z.infer<typeof aparienciaSchema>;
 
 export const APARIENCIA_POR_DEFECTO: Apariencia = {
-  tema: "menta",
-  letra: "urbanist",
+  tema: "evoia",
+  letra: "grotesk",
   tamano: "normal",
   densidad: "normal",
 };

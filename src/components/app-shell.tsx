@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
 import type { Branding } from "@/lib/branding";
 import type { Apariencia } from "@/lib/temas";
 import type { ResolvedCommit } from "@/lib/version";
@@ -11,13 +10,14 @@ import { BrandLogo } from "@/components/brand-mark";
 import { cn } from "@/lib/utils";
 import { BandaSinConexion } from "@/components/banda-sin-conexion";
 import { AtajosGlobales } from "@/components/atajos-globales";
+import { BarraMovil } from "@/components/barra-movil";
 
 /**
  * Cascarón de la app en dos modos:
  *
  * - Escritorio (lg+): el panel lateral es una columna fija, como siempre.
- * - Móvil/tableta: el lateral sale de la izquierda como cajón sobre un velo,
- *   y arriba queda una barra azul marino con el hamburguesa y la marca. El
+ * - Móvil/tableta: el lateral sale de la izquierda como cajón sobre un velo
+ *   (lo abre «Más» en la barra inferior); arriba queda solo la marca. El
  *   cajón se cierra solo al navegar (el `pathname` cambia) y con Escape.
  *
  * La altura usa `100dvh` (no `100vh`) porque en el navegador móvil la barra de
@@ -59,6 +59,7 @@ export function AppShell({
   const pathname = usePathname();
   const esBandeja = pathname === "/inbox" || pathname.startsWith("/inbox/");
   const [navOpen, setNavOpen] = useState(false);
+  const [noLeidos, setNoLeidos] = useState(0);
 
   // Navegar = cerrar el cajón. Sin esto, tocar "Pipeline" deja el velo encima
   // de la pantalla recién cargada.
@@ -98,18 +99,13 @@ export function AppShell({
         kicker={kicker}
         open={navOpen}
         onClose={() => setNavOpen(false)}
+        onUnread={setNoLeidos}
       />
 
       <div className="flex min-w-0 flex-1 flex-col bg-background lg:gap-[var(--hueco)] lg:bg-transparent">
-        <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 text-foreground lg:hidden">
-          <button
-            onClick={() => setNavOpen(true)}
-            aria-label="Abrir el menú"
-            aria-expanded={navOpen}
-            className="rounded-md p-2 text-text-2 hover:bg-accent hover:text-foreground"
-          >
-            <Menu className="h-5 w-5" strokeWidth={1.8} />
-          </button>
+        {/* Fork de EVOIA — arriba solo la marca: el menú se abre con «Más»
+            en la barra de abajo, al alcance del pulgar. */}
+        <header className="cromo-movil flex h-12 shrink-0 items-center border-b bg-background px-4 text-foreground lg:hidden">
           <BrandLogo branding={branding} className="min-w-0" />
         </header>
 
@@ -129,6 +125,12 @@ export function AppShell({
         >
           {children}
         </main>
+
+        <BarraMovil
+          noLeidos={noLeidos}
+          menuAbierto={navOpen}
+          onMas={() => setNavOpen(true)}
+        />
       </div>
     </div>
   );

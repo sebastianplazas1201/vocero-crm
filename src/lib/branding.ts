@@ -45,10 +45,10 @@ export type Branding = {
 };
 
 export const DEFAULT_BRANDING: Branding = {
-  name: "Vocero",
-  // El azul eléctrico de vocerocrm.com: la instancia recién instalada se ve
-  // igual que la landing. Una agencia lo cambia en Configuración → Marca.
-  accent: "#0d5bff",
+  // Fork de EVOIA: la instancia recién instalada lleva la marca de la agencia
+  // (evoia.tech). Se cambia en Configuración → Marca.
+  name: "EVOIA",
+  accent: "#c6ff3d",
   currency: DEFAULT_CURRENCY,
   favicon: null,
 };
@@ -59,6 +59,10 @@ export const DEFAULT_BRANDING: Branding = {
  * quien quiera un CRM más discreto.
  */
 export const ACCENT_PRESETS: Record<string, { label: string; set: AccentSet }> = {
+  "#c6ff3d": {
+    label: "Lima EVOIA",
+    set: { accent: "#c6ff3d", hover: "#b4f01f", soft: "#e9ffc2", tint: "#f6ffe6", text: "#3d5a00", fg: "#07080c" },
+  },
   "#0d5bff": {
     label: "Azul Vocero",
     set: { accent: "#0d5bff", hover: "#0a4de6", soft: "#d3e2ff", tint: "#ebf1ff", text: "#0038d8", fg: "#ffffff" },
@@ -140,7 +144,7 @@ const DARK_BG: Rgb = { r: 0x1a, g: 0x23, b: 0x20 };
  * contra ella y no contra la página: si siguiera a DARK_BG, cambiar el tema
  * oscuro repintaría también la barra del tema claro.
  */
-const NAV_BG: Rgb = { r: 0x0b, g: 0x13, b: 0x27 };
+const NAV_BG: Rgb = { r: 0x07, g: 0x08, b: 0x0c };
 
 /** Tinta ENCIMA del acento: blanco solo si pasa AA (4.5:1), si no, casi negro. */
 const INK_ON_LIGHT = "#0f1419";
@@ -183,7 +187,16 @@ function darkAccentSet(accentHex: string, r: DarkRecipe): AccentSet {
   ) {
     base = mix(base, WHITE, 0.1);
   }
-  const tint = mix(base, r.bg, r.tint);
+  // Un acento muy luminoso (la lima EVOIA) deja la fila seleccionada tan
+  // clara que el texto claro de encima ya no se lee: se hunde más hacia el
+  // fondo hasta que el blanco vuelva a pasar 12:1 (y los grises encima, AA) (los acentos de siempre ya
+  // lo pasan y no cambian).
+  let hundir = r.tint;
+  let tint = mix(base, r.bg, hundir);
+  while (contrast(WHITE, tint) < 12 && hundir < 0.95) {
+    hundir += 0.02;
+    tint = mix(base, r.bg, hundir);
+  }
   let text = mix(base, WHITE, r.text);
   while (contrast(text, tint) < 4.5 && luminance(text) < 0.95) {
     text = mix(text, WHITE, 0.1);

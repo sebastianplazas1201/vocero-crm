@@ -151,12 +151,23 @@ const phone = await ctx.newPage();
 await phone.setViewportSize(PHONE);
 await recorrer(phone, "phone");
 
-console.log("\n== 2. Teléfono: el lateral es un cajón con hamburguesa ==");
+console.log("\n== 2. Teléfono: barra inferior y el lateral como cajón («Más») ==");
 await phone.goto(`${BASE}/pipeline`);
-const hamburguesa = phone.getByRole("button", { name: "Abrir el menú" });
+const hamburguesa = phone.getByRole("button", { name: /abrir el menú/i });
 await hamburguesa.waitFor({ timeout: 20000 });
-ok("la hamburguesa se ve", await hamburguesa.isVisible());
-const linkBandeja = phone.getByRole("link", { name: /Bandeja/ });
+ok("el botón «Más» de la barra inferior se ve", await hamburguesa.isVisible());
+const barraInferior = phone.getByRole("navigation", { name: "Navegación principal" });
+ok(
+  "la barra inferior trae Bandeja, Pipeline y Contactos",
+  (await barraInferior.getByRole("link", { name: /Bandeja/ }).isVisible()) &&
+    (await barraInferior.getByRole("link", { name: /Pipeline/ }).isVisible()) &&
+    (await barraInferior.getByRole("link", { name: /Contactos/ }).isVisible())
+);
+ok(
+  "en Pipeline, la barra inferior marca Pipeline",
+  (await barraInferior.getByRole("link", { name: /Pipeline/ }).getAttribute("aria-current")) === "page"
+);
+const linkBandeja = phone.locator("aside").getByRole("link", { name: /Bandeja/ });
 ok(
   "el lateral arranca oculto (sus enlaces no son alcanzables)",
   !(await linkBandeja.isVisible())
@@ -295,8 +306,9 @@ await desk.getByText(NAME).first().click();
 await desk.getByPlaceholder("Escribe una respuesta").waitFor({ timeout: 20000 });
 ok(
   "el lateral sigue fijo (sin hamburguesa)",
-  !(await desk.getByRole("button", { name: "Abrir el menú" }).isVisible()) &&
-    (await desk.getByRole("link", { name: /Bandeja/ }).isVisible())
+  !(await desk.getByRole("button", { name: /abrir el menú/i }).isVisible()) &&
+    (await desk.getByRole("link", { name: /Bandeja/ }).isVisible()) &&
+    !(await desk.getByRole("navigation", { name: "Navegación principal" }).isVisible())
 );
 const medirColumnas = () =>
   desk.evaluate(() => {
@@ -332,9 +344,9 @@ const luminancia = (rgb) => {
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
-// El contexto no manda la cookie de tema: la página está en claro.
-// 061 — Ya no hay barra azul marino: el riel es una tarjeta clara y la
-// entrada activa va rellena con la tinta del tema.
+// El contexto no manda la cookie de tema: vale el de por defecto, que en el
+// fork de EVOIA es el oscuro de evoia.tech: el riel es una tarjeta casi negra
+// y la entrada activa va rellena de lima con el icono en tinta oscura.
 const barra = await desk.evaluate(() => {
   const riel = document.querySelector('nav[aria-label="Secciones"].tarjeta');
   const activa = riel?.querySelector('[aria-current="page"]');
@@ -346,11 +358,11 @@ const barra = await desk.evaluate(() => {
   };
 });
 ok(
-  "con el tema claro, el riel es una tarjeta clara y la activa va en tinta oscura",
-  barra.tema === "light" &&
-    luminancia(barra.fondo) > 0.8 &&
-    luminancia(barra.activa) < 0.05 &&
-    luminancia(barra.icono) > 0.6,
+  "con el tema por defecto (EVOIA), el riel es casi negro y la activa va en lima",
+  barra.tema === "dark" &&
+    luminancia(barra.fondo) < 0.05 &&
+    luminancia(barra.activa) > 0.6 &&
+    luminancia(barra.icono) < 0.05,
   JSON.stringify(barra)
 );
 
@@ -477,7 +489,7 @@ ok(
 await desk.keyboard.press("Escape");
 await desk.setViewportSize(PHONE);
 await desk.goto(`${BASE}/inbox`, { waitUntil: "domcontentloaded" });
-await desk.getByRole("button", { name: "Abrir el menú" }).waitFor({ timeout: 20000 });
+await desk.getByRole("button", { name: /abrir el menú/i }).waitFor({ timeout: 20000 });
 const franja = await desk.evaluate(() => {
   const aside = document.querySelector("aside");
   const barra = document.querySelector("main")?.previousElementSibling;

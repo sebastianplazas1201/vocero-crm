@@ -175,9 +175,9 @@ try {
     await t.goto(`${BASE}/inbox`);
     await t.getByText(NOMBRE).first().waitFor({ timeout: 20000 });
     ok("AC5 · en el teléfono no hay riel", !(await t.locator('nav[aria-label="Secciones"].tarjeta').isVisible()));
-    await t.getByRole("button", { name: "Abrir el menú" }).click();
+    await t.getByRole("button", { name: /abrir el menú/i }).click();
     await espera(300);
-    ok("AC5 · el cajón del menú abre", await t.getByRole("link", { name: /Pipeline/ }).first().isVisible());
+    ok("AC5 · el cajón del menú abre", await t.locator("aside").getByRole("link", { name: /Pipeline/ }).first().isVisible());
     ok("AC5 · sin desplazamiento horizontal", await t.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
     await t.screenshot({ path: `${SALIDA}/061-cajon-390-${tema}.png` });
     await t.locator("aside").getByRole("button", { name: "Cerrar el menú" }).click();

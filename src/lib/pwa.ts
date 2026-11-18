@@ -14,7 +14,7 @@ import type { Branding } from "./branding";
  * de la pantalla de arranque de la app instalada: así se ve como la barra
  * lateral, no como un parche blanco antes de pintar.
  */
-export const NAV_INK = "#070e20";
+export const NAV_INK = "#07080c";
 
 /** 180 para el iPhone (`apple-touch-icon`); 192 y 512 los pide Chrome para instalar. */
 export const APP_ICON_SIZES = [180, 192, 512] as const;

@@ -30,6 +30,13 @@ const archivo = localFont({
   variable: "--font-archivo",
   display: "swap",
 });
+// Fork de EVOIA — la letra de evoia.tech (y la de la interfaz por defecto).
+const grotesk = localFont({
+  src: "./fonts/space-grotesk-latin-variable.woff2",
+  weight: "300 700",
+  variable: "--font-grotesk",
+  display: "swap",
+});
 // 062 — Las otras dos letras que se eligen en Ajustes → Apariencia.
 const inter = localFont({
   src: "./fonts/inter-latin-variable.woff2",
@@ -94,12 +101,12 @@ export default async function RootLayout({
   // 062 · D6 — La apariencia (tema, letra, tamaño y densidad) se resuelve en
   // el servidor: el primer pintado ya la trae, sin parpadeo.
   const { apariencia } = await aparienciaActual().catch(() => ({
-    apariencia: { tema: "menta", letra: "urbanist", tamano: "normal", densidad: "normal" } as const,
+    apariencia: { tema: "evoia", letra: "grotesk", tamano: "normal", densidad: "normal" } as const,
   }));
   return (
     <html
       lang="es"
-      className={`${urbanist.variable} ${archivo.variable} ${inter.variable} ${plexSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}
+      className={`${grotesk.variable} ${urbanist.variable} ${archivo.variable} ${inter.variable} ${plexSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}
       // La preferencia siempre es explícita: viaja resuelta en el HTML del
       // servidor, así que no hay divergencia con el cliente ni parpadeo.
       {...atributosHtml(apariencia)}

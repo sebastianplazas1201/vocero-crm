@@ -233,19 +233,17 @@ describe("tema claro: no cambia", () => {
     expect(claro["--ring"]).toBe("var(--accent)");
   });
 
-  it("la barra (.nav-dark) conserva sus valores: se ve igual en los dos temas", () => {
-    // Son los que tenía cuando copiaba al tema oscuro de antes; si la barra
-    // cambia, cambia también en claro, que es el tema que al dueño le gusta.
+  it("la barra (.nav-dark) lleva el casi negro de EVOIA en los dos temas", () => {
     expect(nav).toMatchObject({
-      "--bg": "#0b1327",
-      "--bg-subtle": "#070e20",
-      "--bg-panel": "#131f3d",
-      "--bg-hover": "#182750",
-      "--text": "#e8eefc",
-      "--text-2": "#a9b8dc",
-      "--text-3": "#7688b0",
-      "--border": "#263866",
-      "--border-strong": "#34498a",
+      "--bg": "#07080c",
+      "--bg-subtle": "#050609",
+      "--bg-panel": "#11131a",
+      "--bg-hover": "#161922",
+      "--text": "#eef0f5",
+      "--text-2": "#c4c9d4",
+      "--text-3": "#8c93a3",
+      "--border": "#1d2029",
+      "--border-strong": "#2a2e3a",
       "--ring": "var(--accent)",
     });
     expect(css).toMatch(/\.nav-dark \{\s*color-scheme: dark;/);

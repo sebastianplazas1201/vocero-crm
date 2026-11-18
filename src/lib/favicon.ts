@@ -4,6 +4,10 @@ import {
   BRAND_MARK_STROKE,
   BRAND_MARK_TAIL,
   isVoceroName,
+  isEvoiaName,
+  EVOIA_INK,
+  EVOIA_LIME,
+  EVOIA_MARK_PATH,
 } from "./brand";
 import { resolveAccentSet, type Branding } from "./branding";
 
@@ -104,6 +108,7 @@ export function faviconInitial(name: string): string {
 export function generatedFaviconSvg(branding: Branding): string {
   const { accent, hover, fg } = resolveAccentSet(branding.accent);
   if (isVoceroName(branding.name)) return voceroFaviconSvg(accent, hover);
+  if (isEvoiaName(branding.name)) return evoiaFaviconSvg();
   const letra = faviconInitial(branding.name)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;");
@@ -112,6 +117,16 @@ export function generatedFaviconSvg(branding: Branding): string {
     `<rect width="64" height="64" rx="12" fill="${accent}"/>`,
     `<text x="32" y="33" fill="${fg}" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif"`,
     ` font-size="38" font-weight="700" text-anchor="middle" dominant-baseline="central">${letra}</text>`,
+    `</svg>`,
+  ].join("");
+}
+
+/** El favicon de evoia.tech: la «E» lima sobre casi negro. */
+function evoiaFaviconSvg(): string {
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="64" height="64">`,
+    `<rect width="32" height="32" rx="8" fill="${EVOIA_INK}"/>`,
+    `<path d="${EVOIA_MARK_PATH}" stroke="${EVOIA_LIME}" stroke-width="3" stroke-linecap="round" fill="none"/>`,
     `</svg>`,
   ].join("");
 }

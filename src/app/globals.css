@@ -19,7 +19,7 @@
 
     /* 061 — La familia de la interfaz (ver layout.tsx). 062 la cambia con
        data-letra. */
-    --font-sans: var(--font-urbanist), var(--font-archivo);
+    --font-sans: var(--font-grotesk), var(--font-urbanist);
     /* 062 — Tamaño (zoom de la app) y densidad (filas y espacio entre
        tarjetas). Los cambia Ajustes → Apariencia con data-tamano y
        data-densidad. */
@@ -61,13 +61,13 @@
     --bubble-out-border: #d8e2dc;
     --bubble-out-text: var(--text);
 
-    /* Acento (default: azul Vocero; el white-label lo sobreescribe) */
-    --accent: #0d5bff;
-    --accent-hover: #0a4de6;
-    --accent-soft: #d3e2ff;
-    --accent-tint: #ebf1ff;
-    --accent-text: #0038d8;
-    --accent-fg: #ffffff;
+    /* Acento (default: lima EVOIA; el white-label lo sobreescribe) */
+    --accent: #c6ff3d;
+    --accent-hover: #b4f01f;
+    --accent-soft: #e9ffc2;
+    --accent-tint: #f6ffe6;
+    --accent-text: #3d5a00;
+    --accent-fg: #07080c;
     /* El acento como TINTA (una hora, un enlace) y como anillo de foco. En
        claro son el acento mismo; en oscuro, sus variantes aclaradas: el
        acento sólido es para rellenos y ahí no alcanza AA como texto. */
@@ -143,6 +143,9 @@
     --bubble-in-raised: #252c28;
     --bubble-in-line: #3a443f;
     --bubble-out-muted: #5f6a65;
+    /* Fork de EVOIA — los enlaces dentro de la respuesta: con la burbuja en
+       el acento, el acento como tinta desaparecería. */
+    --bubble-out-link: var(--accent-ink);
   }
 
   /*
@@ -186,12 +189,12 @@
 
     /* Acento: respaldo con el azul Vocero calculado para este fondo; el
        white-label lo recalcula (ver resolveAccentSet en lib/branding). */
-    --accent: #0d5bff;
-    --accent-hover: #3475ff;
-    --accent-soft: #143c82;
-    --accent-tint: #16335e;
-    --accent-text: #6f9eff;
-    --accent-fg: #ffffff;
+    --accent: #c6ff3d;
+    --accent-hover: #cfff5c;
+    --accent-soft: #66842d;
+    --accent-tint: #2b3923;
+    --accent-text: #d9ff7f;
+    --accent-fg: #0f1419;
     --accent-ink: var(--accent-text);
     --ring: var(--accent-text);
     --accent-veil: rgba(0, 0, 0, 0.22);
@@ -266,19 +269,20 @@
   */
   .nav-dark {
     color-scheme: dark;
-    --bg: #0b1327;
-    --bg-subtle: #070e20;
-    --bg-panel: #131f3d;
-    --bg-raised: #131f3d;
-    --bg-hover: #182750;
-    --text: #e8eefc;
-    --text-2: #a9b8dc;
-    --text-3: #7688b0;
-    --text-4: #55648a;
-    --border: #263866;
-    --border-strong: #34498a;
-    --chip-bg: #142040;
-    --row-hover: #111b36;
+    /* Fork de EVOIA — el casi negro de evoia.tech. */
+    --bg: #07080c;
+    --bg-subtle: #050609;
+    --bg-panel: #11131a;
+    --bg-raised: #11131a;
+    --bg-hover: #161922;
+    --text: #eef0f5;
+    --text-2: #c4c9d4;
+    --text-3: #8c93a3;
+    --text-4: #5f6676;
+    --border: #1d2029;
+    --border-strong: #2a2e3a;
+    --chip-bg: #11131a;
+    --row-hover: #0e1016;
     --accent-ink: var(--accent-text);
     --ring: var(--accent);
     --shadow-pop: 0 30px 80px -20px rgba(0, 0, 0, 0.75),
@@ -357,7 +361,8 @@
     height: 460px;
     left: -140px;
     bottom: -180px;
-    background: radial-gradient(circle, rgba(0, 198, 245, 0.14), transparent 65%);
+    /* Fork de EVOIA — el brillo violeta de evoia.tech. */
+    background: radial-gradient(circle, rgba(124, 92, 255, 0.18), transparent 65%);
     animation: brand-drift 18s ease-in-out infinite alternate-reverse;
   }
   @keyframes brand-drift {
@@ -433,6 +438,14 @@
   }
 }
 
+/* Fork de EVOIA — con un hilo abierto en el teléfono, el chat ocupa la
+   pantalla: se esconden la barra de arriba y la de abajo (ver BarraMovil). */
+@media (max-width: 767px) {
+  :root[data-hilo="abierto"] .cromo-movil {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -489,12 +502,16 @@
   }
   .burbuja-out {
     --text: var(--bubble-out-text);
+    --text-2: var(--bubble-out-text);
     --text-3: var(--bubble-out-muted);
+    --accent-ink: var(--bubble-out-link);
     color: var(--text);
   }
 }
 
 /* 062 — Ajustes → Apariencia: letra, tamaño y densidad. */
+:root[data-letra="urbanist"] { --font-sans: var(--font-urbanist), var(--font-archivo); }
+:root[data-letra="grotesk"] { --font-sans: var(--font-grotesk), var(--font-urbanist); }
 :root[data-letra="archivo"] { --font-sans: var(--font-archivo), var(--font-urbanist); }
 :root[data-letra="inter"] { --font-sans: var(--font-inter), var(--font-urbanist); }
 :root[data-letra="plex"] { --font-sans: var(--font-plex-sans), var(--font-urbanist); }

@@ -97,6 +97,16 @@ export function InboxClient({
     setConversacionAbierta(selectedId);
     return () => setConversacionAbierta(null);
   }, [selectedId]);
+  // Fork de EVOIA — con un hilo abierto en el teléfono, la barra de arriba y
+  // la de abajo se esconden: el chat ocupa la pantalla, como en WhatsApp.
+  useEffect(() => {
+    const raiz = document.documentElement;
+    if (selectedId) raiz.dataset.hilo = "abierto";
+    else delete raiz.dataset.hilo;
+    return () => {
+      delete raiz.dataset.hilo;
+    };
+  }, [selectedId]);
   const lastFetchRef = useRef<string | null>(null);
   const tmpSeq = useRef(0);
   // Los envíos salen en fila: el compositor ya no espera, pero WhatsApp debe

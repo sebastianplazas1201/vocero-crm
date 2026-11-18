@@ -77,6 +77,7 @@ export function AppNav({
   kicker = "CRM · WhatsApp",
   open = false,
   onClose,
+  onUnread,
 }: {
   branding: Branding;
   userName: string;
@@ -99,6 +100,8 @@ export function AppNav({
   /** Solo aplica por debajo de `lg`: en escritorio el lateral es fijo. */
   open?: boolean;
   onClose?: () => void;
+  /** Fork de EVOIA — el contador de no leídos, para la barra inferior del teléfono. */
+  onUnread?: (chats: number) => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -107,9 +110,13 @@ export function AppNav({
   const [chats, setChats] = useState(0);
   const [sonido, setSonido] = useState(true);
 
+  const avisarNoLeidos = useRef(onUnread);
+  avisarNoLeidos.current = onUnread;
   const contar = useCallback((lista: ConversacionDeLista[]) => {
     setUnread(lista.reduce((a, c) => a + c.unreadCount, 0));
-    setChats(lista.filter((c) => c.unreadCount > 0).length);
+    const conAlgo = lista.filter((c) => c.unreadCount > 0).length;
+    setChats(conAlgo);
+    avisarNoLeidos.current?.(conAlgo);
   }, []);
 
   const pedirLista = useCallback(async () => {
