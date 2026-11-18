@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireSession, UnauthorizedError, type SessionContext } from "@/lib/auth/session";
+import { isReadOnly } from "@/lib/auth/roles";
 
 /** Respuesta de error estándar de la API interna (contrato api.md). */
 export function apiError(
@@ -26,6 +27,14 @@ export function withAuth<Args extends unknown[]>(
         return apiError(401, "unauthorized", "No autenticado");
       }
       throw err;
+    }
+    // Fork de EVOIA — una cuenta de solo lectura mira, no cambia: todo lo que
+    // no sea leer se rechaza aquí, en el único sitio por el que pasa la API.
+    if (isReadOnly(session.role)) {
+      const req = args.find((a): a is Request => a instanceof Request);
+      if (req && !["GET", "HEAD", "OPTIONS"].includes(req.method.toUpperCase())) {
+        return apiError(403, "read_only", "Esta cuenta es de solo lectura: puede ver, pero no cambiar nada.");
+      }
     }
     try {
       return await handler(session, ...args);

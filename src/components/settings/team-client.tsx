@@ -22,6 +22,7 @@ export function TeamClient() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [soloLectura, setSoloLectura] = useState(false);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +55,12 @@ export function TeamClient() {
     const res = await fetch("/api/settings/team", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, email, password: tempPassword }),
+      body: JSON.stringify({
+        name,
+        email,
+        password: tempPassword,
+        role: soloLectura ? "viewer" : "member",
+      }),
     }).catch(() => null);
     setSaving(false);
     if (!res?.ok) {
@@ -68,6 +74,7 @@ export function TeamClient() {
     setName("");
     setEmail("");
     setTempPassword("");
+    setSoloLectura(false);
     void refetch();
   }
 
@@ -115,6 +122,22 @@ export function TeamClient() {
               </Button>
             </div>
           </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
+              checked={soloLectura}
+              onChange={(e) => setSoloLectura(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium">Solo lectura</span>
+              <span className="block text-xs text-muted-foreground">
+                Puede ver la Bandeja, los contactos y los ajustes, pero no
+                responder, editar ni conectar nada. Útil para los revisores de
+                Meta.
+              </span>
+            </span>
+          </label>
           {error && <p className="text-sm text-destructive">{error}</p>}
           {created && (
             <div className="rounded-md border border-success-soft bg-success-tint p-3 text-sm">
@@ -154,7 +177,7 @@ export function TeamClient() {
               <p className="text-xs text-muted-foreground">{m.email}</p>
             </div>
             <Badge variant={m.role === "owner" ? "default" : "secondary"}>
-              {m.role === "owner" ? "Propietario" : "Miembro"}
+              {m.role === "owner" ? "Propietario" : m.role === "viewer" ? "Solo lectura" : "Miembro"}
             </Badge>
           </div>
         ))}

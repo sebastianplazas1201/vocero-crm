@@ -12,3 +12,14 @@
 export function canConfigure(role: string | null | undefined): boolean {
   return role === "owner" || role === "admin";
 }
+
+/**
+ * Fork de EVOIA — cuenta de solo lectura (para los revisores de Meta y para
+ * quien solo deba mirar): ve todo y no cambia nada. La API rechaza cualquier
+ * método que no sea de lectura (ver `withAuth` en lib/api.ts).
+ */
+export const VIEWER_ROLE = "viewer";
+
+export function isReadOnly(role: string | null | undefined): boolean {
+  return role === VIEWER_ROLE;
+}
