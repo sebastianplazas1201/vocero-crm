@@ -9,6 +9,8 @@ import { apiError, parseBody } from "@/lib/api";
 import { requireBotKey, resolveInstanceOrg } from "@/server/bot/auth";
 import { SendError, sendText } from "@/server/inbox/send";
 import { guardarRespuestaDePrueba } from "@/server/lab/sandbox";
+import { after } from "next/server";
+import { ejecutarMarcas, parsearMarcas } from "@/server/bot/marcas";
 
 export const dynamic = "force-dynamic";
 
@@ -68,23 +70,34 @@ export async function POST(req: Request) {
   if (!conv.aiEnabled || conv.handoffAt) {
     return apiError(409, "ai_paused", "La IA está en pausa en esta conversación");
   }
+  // Marcas del cerebro ([[ENVIAR: …]], [[LISTA: …]], [[ALERTA: …]], [[PAGO]]):
+  // se quitan del texto y se ejecutan después de enviarlo.
+  const marcas = parsearMarcas(body.data.text);
   if (conv.isTest) {
     const guardada = await guardarRespuestaDePrueba({
       organizationId,
       conversationId: body.data.conversationId,
-      text: body.data.text,
+      text: marcas.texto || body.data.text,
     });
     return Response.json({ messageId: guardada.messageId, status: "sent" });
   }
 
+  const conversationId = body.data.conversationId;
+  const conTareas =
+    marcas.recursos.length > 0 || marcas.listas.length > 0 || marcas.alertas.length > 0 || marcas.pago;
   try {
-    const result = await sendText({
-      conversationId: body.data.conversationId,
-      organizationId,
-      text: body.data.text,
-      aiGenerated: true,
-    });
-    return Response.json({ messageId: result.messageId });
+    let messageId: string | null = null;
+    if (marcas.texto) {
+      const result = await sendText({
+        conversationId,
+        organizationId,
+        text: marcas.texto,
+        aiGenerated: true,
+      });
+      messageId = result.messageId;
+    }
+    if (conTareas) after(() => ejecutarMarcas(organizationId, conversationId, marcas));
+    return Response.json({ messageId });
   } catch (err) {
     if (err instanceof SendError) {
       if (err.code === "window_closed") {

@@ -544,6 +544,8 @@ export async function sendMediaMessage(input: {
   replyToMessageId?: string;
   /** 044: grabado en el compositor; sale como nota de voz si es Ogg/Opus. */
   voz?: boolean;
+  /** Lo envía la IA (marca `[[ENVIAR: …]]`) y no una persona. */
+  aiGenerated?: boolean;
 }): Promise<SendResult> {
   // 044: un WebM grabado se pasa a Ogg antes de validar (WhatsApp no acepta WebM).
   const audio = input.file.mimeType.startsWith("audio/")
@@ -621,7 +623,8 @@ export async function sendMediaMessage(input: {
       type: kind,
       text: null,
       status: "pending",
-      origin: "operator",
+      aiGenerated: input.aiGenerated,
+      origin: input.aiGenerated ? "ai" : "operator",
       mediaAssetId: assetId,
       media: asset,
       cita,
@@ -744,6 +747,67 @@ export async function sendStructured(
     mediaAssetId: asset.id,
     media: asset,
     cita,
+  });
+  return { messageId };
+}
+
+export type ListaInteractiva = {
+  cuerpo: string;
+  boton: string;
+  filas: { titulo: string; descripcion?: string }[];
+};
+
+/**
+ * Lista interactiva de WhatsApp (hasta 10 opciones; el cliente toca una).
+ * La respuesta vuelve como `list_reply` y la ingesta ya la guarda como texto.
+ * En el hilo queda como texto: el cuerpo y las opciones.
+ */
+export async function sendInteractiveList(input: {
+  conversationId: string;
+  organizationId: string;
+  lista: ListaInteractiva;
+  aiGenerated?: boolean;
+}): Promise<SendResult> {
+  const target = await prepareSend(
+    input.conversationId,
+    input.organizationId,
+    input.aiGenerated ?? false
+  );
+  if (!target.credentials || target.instagram || target.messenger || target.tiktok) {
+    throw new SendError("meta_error", "Este canal no admite listas interactivas");
+  }
+  const { cuerpo, boton, filas } = input.lista;
+  const rows = filas.slice(0, 10).map((f, i) => ({
+    id: `op_${i + 1}`,
+    title: f.titulo.slice(0, 24),
+    ...(f.descripcion ? { description: f.descripcion.slice(0, 72) } : {}),
+  }));
+  const waMessageId = await callGraphSend(target.credentials, {
+    messaging_product: "whatsapp",
+    ...target.destinatario,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: cuerpo.slice(0, 1024) },
+      action: {
+        button: boton.slice(0, 20),
+        sections: [{ title: boton.slice(0, 24), rows }],
+      },
+    },
+  });
+  const texto = [
+    cuerpo,
+    ...rows.map((r) => `• ${r.title}${r.description ? ` — ${r.description}` : ""}`),
+  ].join("\n");
+  const messageId = await persistOutbound({
+    organizationId: input.organizationId,
+    conversationId: input.conversationId,
+    waMessageId,
+    type: "text",
+    text: texto,
+    status: "pending",
+    aiGenerated: input.aiGenerated,
+    origin: input.aiGenerated ? "ai" : "operator",
   });
   return { messageId };
 }

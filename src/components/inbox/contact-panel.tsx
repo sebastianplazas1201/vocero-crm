@@ -33,6 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FichaPanel } from "@/components/ficha-panel";
 import { DeleteConversationDialog } from "./delete-conversation-dialog";
+import { ConfirmarPedido } from "./confirmar-pedido";
 
 
 export function ContactPanel({
@@ -367,6 +368,13 @@ export function ContactPanel({
 
         {/* Ficha: lo que se SABE del lead. Va antes de Notas —lo que alguien
             OPINA— porque es lo que se consulta a mitad de una conversación. */}
+        <ConfirmarPedido
+          key={conversation.id}
+          conversationId={conversation.id}
+          contactName={conversation.contact.name ?? ""}
+          ficha={ficha}
+          onDone={() => void refetch()}
+        />
         <FichaPanel ficha={ficha} onSave={saveFicha} />
 
         {/* Notas */}
