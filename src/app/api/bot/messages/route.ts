@@ -11,6 +11,7 @@ import { SendError, sendText } from "@/server/inbox/send";
 import { guardarRespuestaDePrueba } from "@/server/lab/sandbox";
 import { after } from "next/server";
 import { ejecutarMarcas, parsearMarcas } from "@/server/marcas-agente";
+import { conversacionEnCurso, esRellenoGenerico, quitarEmojis } from "@/server/filtro-respuesta";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,18 @@ export async function POST(req: Request) {
   // Marcas del cerebro ([[ENVIAR: …]], [[LISTA: …]], [[ALERTA: …]], [[PAGO]]):
   // se quitan del texto y se ejecutan después de enviarlo.
   const marcas = parsearMarcas(body.data.text);
+  marcas.texto = quitarEmojis(marcas.texto);
+  const sinTareas =
+    !marcas.recursos.length && !marcas.listas.length && !marcas.alertas.length && !marcas.pago;
+  if (
+    sinTareas &&
+    esRellenoGenerico(marcas.texto) &&
+    (await conversacionEnCurso(organizationId, body.data.conversationId))
+  ) {
+    // Saludo repetido en mitad de la conversación: no sale.
+    console.info(`[bot] relleno descartado en ${body.data.conversationId}: ${marcas.texto}`);
+    return Response.json({ messageId: null, status: "skipped" });
+  }
   if (conv.isTest) {
     const guardada = await guardarRespuestaDePrueba({
       organizationId,
