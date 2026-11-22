@@ -41,6 +41,8 @@ const prefixes = {
   quickReply: "qr",
   // 050 — notas internas del hilo
   conversationNote: "nota",
+  pedido: "ped",
+  imagenPedido: "imped",
 } as const;
 
 export type IdKind = keyof typeof prefixes;

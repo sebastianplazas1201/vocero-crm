@@ -1,4 +1,5 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+import { notaDelSistema } from "@/server/marcas-agente";
 import { getDb, schema } from "@/lib/db";
 import { encolarDespacho } from "@/server/dispatch/outbox";
 import { iniciarWorker, programarTanda } from "@/server/dispatch/worker";
@@ -52,12 +53,30 @@ export async function despacharAlCerebro(
       .limit(1);
     if (!perfil?.enabled) return;
 
+    // Notas de voz: el cerebro no las entiende (daba «error del proveedor de
+    // IA»). Se avisa al equipo para que la escuche y la IA sigue con el
+    // siguiente mensaje escrito.
+    const [msg] = await getDb()
+      .select({ type: schema.message.type })
+      .from(schema.message)
+      .where(eq(schema.message.id, messageId))
+      .limit(1);
+    if (msg?.type === "audio") {
+      await notaDelSistema(
+        organizationId,
+        conversationId,
+        "🎙️ El cliente envió una nota de voz: escúchala y respóndele. Ana sigue con el próximo mensaje escrito."
+      );
+      return;
+    }
+
     // 025 — El despacho anota qué entrante lo provoca: es lo que le debe al
     // cerebro, aunque después la conversación tenga una respuesta.
     const { notBefore } = await encolarDespacho({
       organizationId,
       conversationId,
       messageIds: [messageId],
+      ventanaMs: await ventanaDeEsta(conversationId),
     });
     iniciarWorker();
     // Que despierte justo cuando la ventana venza, no en su siguiente barrido.
@@ -65,4 +84,25 @@ export async function despacharAlCerebro(
   } catch (err) {
     console.error("[despacho] no se pudo encolar el turno:", err);
   }
+}
+
+/** 12 h sin que le hayamos escrito = la conversación (re)empieza. */
+const INICIO_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * Al abrir una conversación se contesta rápido (`AGENT_COALESCE_FIRST_MS`);
+ * después, con la ventana normal, que también agrupa los mensajes a trozos.
+ */
+async function ventanaDeEsta(conversationId: string): Promise<number | undefined> {
+  const crudo = process.env.AGENT_COALESCE_FIRST_MS?.trim();
+  const primera = crudo ? Number(crudo) : NaN;
+  if (!Number.isFinite(primera) || primera < 0) return undefined;
+  const [ultima] = await getDb()
+    .select({ createdAt: schema.message.createdAt })
+    .from(schema.message)
+    .where(and(eq(schema.message.conversationId, conversationId), eq(schema.message.direction, "out")))
+    .orderBy(desc(schema.message.createdAt))
+    .limit(1);
+  const inicio = !ultima || Date.now() - ultima.createdAt.getTime() > INICIO_MS;
+  return inicio ? primera : undefined;
 }

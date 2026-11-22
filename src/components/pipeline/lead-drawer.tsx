@@ -15,6 +15,7 @@ import { cn, formatPhone } from "@/lib/utils";
 import { AnuncioOrigen } from "@/components/anuncio-origen";
 import { ContactAvatar } from "@/components/avatar";
 import { FichaPanel } from "@/components/ficha-panel";
+import { ConfirmarPedido } from "@/components/inbox/confirmar-pedido";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PriorityPicker } from "./priority-picker";
@@ -271,6 +272,15 @@ export function LeadDrawer({
               })}
             </div>
           </section>
+
+          {/* Pedidos con su resumen en imagen */}
+          <ConfirmarPedido
+            key={contactId}
+            contactId={contactId}
+            contactName={lead.contact.name ?? ""}
+            ficha={ficha}
+            onDone={() => void cargarFicha()}
+          />
 
           {/* Qué se sabe */}
           <FichaPanel ficha={ficha} onSave={guardarFicha} />

@@ -28,6 +28,21 @@ import { windowMsFor } from "@/server/channels/capabilities";
 /** Lo que el CRM espera por el 2xx. Significa «recibido», no «ya contesté». */
 export const TIMEOUT_ENTREGA_MS = 20_000;
 
+/**
+ * Una nota de voz no viaja al cerebro (no la entiende y fallaba): va como un
+ * aviso de texto. La escucha una persona del equipo.
+ */
+function sinAudio<T extends { type: string; text: string | null; waMediaId: string | null; assetId: string | null }>(m: T): T {
+  if (m.type !== "audio") return m;
+  return {
+    ...m,
+    type: "text",
+    text: "[El cliente envió una nota de voz. Una persona del equipo la escucha; no la menciones ni digas que no puedes oírla.]",
+    waMediaId: null,
+    assetId: null,
+  };
+}
+
 /** Cuántos mensajes hacia atrás se mira para delimitar la ráfaga. */
 const VENTANA_DE_MENSAJES = 20;
 
@@ -129,7 +144,8 @@ export async function rafagaDe(
   );
   const rafaga = ordenados
     .slice(ultimaSalida + 1)
-    .filter((m) => m.direction === "in");
+    .filter((m) => m.direction === "in")
+    .map(sinAudio);
 
   const enRafaga = new Set(rafaga.map((m) => m.id));
   const faltan = [...new Set(debidos)].filter((id) => !enRafaga.has(id));
@@ -165,7 +181,7 @@ export async function rafagaDe(
     .orderBy(schema.message.createdAt);
   // Los atrasados son, por definición, anteriores al último saliente; la
   // ráfaga, posterior. Concatenar ya los deja en orden.
-  return [...atrasados, ...rafaga].map(paraEvento);
+  return [...atrasados.map(sinAudio), ...rafaga].map(paraEvento);
 }
 
 /**

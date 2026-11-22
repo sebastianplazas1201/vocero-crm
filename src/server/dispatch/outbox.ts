@@ -70,11 +70,13 @@ export async function encolarDespacho(params: {
    * del guion a la vez y no tiene a nadie más escribiendo detrás.
    */
   inmediato?: boolean;
+  /** Ventana de agrupado propia (p. ej. más corta al abrir una conversación). */
+  ventanaMs?: number;
 }): Promise<{ id: string; notBefore: Date }> {
   const db = getDb();
   const ahora = params.ahora ?? new Date();
   const notBefore = new Date(
-    ahora.getTime() + (params.inmediato ? 0 : ventanaCoalesceMs())
+    ahora.getTime() + (params.inmediato ? 0 : (params.ventanaMs ?? ventanaCoalesceMs()))
   );
   const messageIds = [...new Set(params.messageIds ?? [])];
   // Se concatena en SQL y no leyendo-y-escribiendo: dos mensajes que llegan a

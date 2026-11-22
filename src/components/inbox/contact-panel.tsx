@@ -370,6 +370,7 @@ export function ContactPanel({
             OPINA— porque es lo que se consulta a mitad de una conversación. */}
         <ConfirmarPedido
           key={conversation.id}
+          contactId={contactId}
           conversationId={conversation.id}
           contactName={conversation.contact.name ?? ""}
           ficha={ficha}

@@ -1401,3 +1401,36 @@ export const conversationNote = pgTable(
     index("conversation_note_conv_idx").on(t.organizationId, t.conversationId, t.createdAt),
   ]
 );
+
+/**
+ * Pedidos confirmados (con su resumen en imagen). Viven con el contacto y se
+ * ven en el pipeline; pueden nacer en una conversación (botón «Confirmar
+ * pedido») o a mano, para ventas cerradas por otro canal.
+ */
+export const pedido = pgTable(
+  "pedido",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    contactId: text("contact_id")
+      .notNull()
+      .references(() => contact.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").references(() => conversation.id, {
+      onDelete: "set null",
+    }),
+    numero: text("numero").notNull(),
+    cliente: text("cliente").notNull(),
+    lineas: jsonb("lineas").$type<string[]>().notNull(),
+    fechaEntrega: text("fecha_entrega"),
+    entrega: text("entrega"),
+    total: integer("total").notNull(),
+    abono: integer("abono").notNull(),
+    /** Dónde quedó el PNG del resumen en el almacenamiento de medios. */
+    imagenId: text("imagen_id").notNull(),
+    enviadoAt: timestamp("enviado_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("pedido_contacto_idx").on(t.organizationId, t.contactId, t.createdAt)]
+);
