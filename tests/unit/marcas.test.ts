@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsearMarcas } from "@/server/bot/marcas";
+import { parsearMarcas } from "@/server/marcas-agente";
 
 describe("marcas del cerebro", () => {
   it("quita las marcas del texto y las separa", () => {

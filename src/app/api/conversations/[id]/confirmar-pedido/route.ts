@@ -5,7 +5,7 @@ import { scoped } from "@/lib/db/tenant";
 import { apiError, parseBody, withAuth } from "@/lib/api";
 import { SendError, sendMediaMessage } from "@/server/inbox/send";
 import { upsertFicha } from "@/server/bot/ficha";
-import { notaDelSistema, pasarACliente } from "@/server/bot/marcas";
+import { notaDelSistema, pasarACliente } from "@/server/marcas-agente";
 import { pesos, renderFactura } from "@/server/factura";
 
 export const dynamic = "force-dynamic";

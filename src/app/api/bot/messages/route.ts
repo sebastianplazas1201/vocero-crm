@@ -10,7 +10,7 @@ import { requireBotKey, resolveInstanceOrg } from "@/server/bot/auth";
 import { SendError, sendText } from "@/server/inbox/send";
 import { guardarRespuestaDePrueba } from "@/server/lab/sandbox";
 import { after } from "next/server";
-import { ejecutarMarcas, parsearMarcas } from "@/server/bot/marcas";
+import { ejecutarMarcas, parsearMarcas } from "@/server/marcas-agente";
 
 export const dynamic = "force-dynamic";
 
