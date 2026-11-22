@@ -76,7 +76,28 @@ export function parsearMarcas(entrada: string): Marcas {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+  // Red de seguridad: si Ana le dice al cliente que lo consulta con el equipo
+  // (o que lo pasa a una persona) y olvidó la marca, igual se avisa.
+  if (!out.alertas.length && !out.pago) {
+    const motivo = alertaImplicita(out.texto);
+    if (motivo) out.alertas.push(motivo);
+  }
   return out;
+}
+
+const FRASES_DE_EQUIPO =
+  /\b(confirm\w*|consult\w*|pregunt\w*|verific\w*|revis\w*|averigu\w*)\s+(lo\s+|esto\s+|eso\s+)?con\s+(el|mi|nuestro)\s+equipo\b|\bte\s+comunic\w*\s+con\s+(una\s+persona|alguien|un\s+asesor|el\s+equipo)|\bno\s+(estoy|estamos)\s+segur[ao]s?\b|\bno\s+tengo\s+(esa|ese|la)\s+(informaci[oó]n|dato)/i;
+
+/** Frase del texto que dispara la alerta, o null. */
+export function alertaImplicita(texto: string): string | null {
+  const m = texto.match(FRASES_DE_EQUIPO);
+  if (!m) return null;
+  const frase = texto
+    .split(/(?<=[.!?\n])\s*/)
+    .find((f) => FRASES_DE_EQUIPO.test(f))
+    ?.trim()
+    .slice(0, 160);
+  return `Ana dijo que lo consulta con el equipo: «${frase || m[0]}»`;
 }
 
 export function tieneMarcas(texto: string): boolean {
