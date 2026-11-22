@@ -18,6 +18,7 @@ import {
  *
  *   [[ENVIAR: menu-cenas]]   manda el archivo `public/recursos/menu-cenas.*`
  *   [[LISTA: Título | A; B]] manda una lista interactiva (máx. 10 opciones;
+ *                            [[LISTA: proteinas]] = una guardada en listas.json;
  *                            «Opción - descripción» para dar detalle)
  *   [[ALERTA: motivo]]       deja una nota de alerta al equipo SIN pausar la IA
  *   [[PAGO]]                 el cliente envió el abono: pasa a la etapa «Cliente»
@@ -28,7 +29,8 @@ import {
 export type Marcas = {
   texto: string;
   recursos: string[];
-  listas: ListaInteractiva[];
+  /** Una lista escrita por el cerebro o el nombre de una guardada en `public/recursos/listas.json`. */
+  listas: (ListaInteractiva | { nombre: string })[];
   alertas: string[];
   pago: boolean;
 };
@@ -39,7 +41,8 @@ function quitarTildes(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-function parsearLista(arg: string): ListaInteractiva | null {
+function parsearLista(arg: string): ListaInteractiva | { nombre: string } | null {
+  if (!arg.includes("|")) return { nombre: arg.trim() };
   const [cabeza, resto] = arg.includes("|") ? arg.split(/\|(.*)/s) : ["Elige una opción", arg];
   const filas = (resto ?? "")
     .split(/[;\n]/)
@@ -105,6 +108,25 @@ async function leerRecurso(nombre: string) {
   return null;
 }
 
+type ListaGuardada = Partial<ListaInteractiva> & { copia?: string };
+
+/** Listas fijas del negocio (`public/recursos/listas.json`), por nombre sin tildes. */
+async function listaGuardada(nombre: string): Promise<ListaInteractiva | null> {
+  try {
+    const todas = JSON.parse(
+      await readFile(path.join(process.cwd(), "public", "recursos", "listas.json"), "utf8")
+    ) as Record<string, ListaGuardada>;
+    const clave = quitarTildes(nombre).toLowerCase().trim().replace(/\s+/g, "-");
+    const l = todas[clave];
+    if (!l) return null;
+    const filas = l.filas ?? (l.copia ? todas[l.copia]?.filas : undefined);
+    if (!filas?.length) return null;
+    return { cuerpo: l.cuerpo ?? "Elige una opción", boton: l.boton ?? "Ver opciones", filas };
+  } catch {
+    return null;
+  }
+}
+
 /** Nota interna sin autor: así se ve como aviso del sistema en el hilo. */
 export async function notaDelSistema(
   organizationId: string,
@@ -135,6 +157,22 @@ export async function notaDelSistema(
         puedeBorrar: true,
       },
     },
+  });
+}
+
+/**
+ * Marca la conversación para que el equipo la vea en la bandeja («Atención
+ * humana») sin pausar a la IA. Se limpia cuando alguien del equipo responde.
+ */
+export async function marcarAlerta(organizationId: string, conversationId: string, motivo: string): Promise<void> {
+  const ahora = new Date();
+  await getDb()
+    .update(schema.conversation)
+    .set({ alertaAt: ahora, alertaMotivo: motivo.slice(0, 300), updatedAt: ahora })
+    .where(scoped(schema.conversation.organizationId, organizationId, eq(schema.conversation.id, conversationId)));
+  publish(organizationId, {
+    type: "conversation.updated",
+    data: { conversation: { id: conversationId, alertaAt: ahora.toISOString(), alertaMotivo: motivo } },
   });
 }
 
@@ -201,7 +239,12 @@ export async function ejecutarMarcas(
       await notaDelSistema(organizationId, conversationId, `⚠️ No se pudo enviar «${nombre}» al cliente.`).catch(() => {});
     }
   }
-  for (const lista of marcas.listas) {
+  for (const pedida of marcas.listas) {
+    const lista = "nombre" in pedida ? await listaGuardada(pedida.nombre) : pedida;
+    if (!lista) {
+      await notaDelSistema(organizationId, conversationId, `⚠️ Ana quiso enviar la lista «${"nombre" in pedida ? pedida.nombre : ""}», pero no existe.`).catch(() => {});
+      continue;
+    }
     try {
       await sendInteractiveList({ conversationId, organizationId, lista, aiGenerated: true });
     } catch (err) {
@@ -213,6 +256,7 @@ export async function ejecutarMarcas(
     await notaDelSistema(organizationId, conversationId, `⚠️ Alerta de Ana (sigue respondiendo): ${motivo}`).catch((err) =>
       console.error("[marcas] no se pudo guardar la alerta", err)
     );
+    await marcarAlerta(organizationId, conversationId, motivo).catch(() => {});
   }
   if (marcas.pago) {
     try {
@@ -222,6 +266,7 @@ export async function ejecutarMarcas(
         conversationId,
         `💸 El cliente envió el abono${etapa ? ` · pasó a «${etapa}»` : ""}. Revisa el pago y pulsa «Confirmar pedido».`
       );
+      await marcarAlerta(organizationId, conversationId, "Envió el abono: revisa el pago y confirma el pedido");
     } catch (err) {
       console.error("[marcas] no se pudo registrar el pago", err);
     }

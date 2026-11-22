@@ -524,6 +524,15 @@ export function ConversationList({
                             {etiquetaVence(c.windowRemainingMs)}
                           </span>
                         )}
+                        {!c.handoffAt && c.alertaAt && (
+                          <span
+                            title={c.alertaMotivo ?? "Ana pidió que alguien revise"}
+                            className="inline-flex items-center gap-1 rounded-full border border-warning-soft bg-warning-tint px-2 py-0.5 text-[11px] font-semibold text-warning-text"
+                          >
+                            <UserRound className="h-3 w-3" strokeWidth={1.7} />
+                            Atención humana
+                          </span>
+                        )}
                         {c.handoffAt && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-warning-soft bg-warning-tint px-2 py-0.5 text-[11px] text-warning-text">
                             <UserRound className="h-3 w-3" strokeWidth={1.7} />

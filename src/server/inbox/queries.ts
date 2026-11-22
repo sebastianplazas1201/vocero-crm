@@ -171,6 +171,8 @@ export function serializeConversation(
     aiEnabled: c.aiEnabled,
     handoffAt: c.handoffAt?.toISOString() ?? null,
     handoffReason: c.handoffReason,
+    alertaAt: c.alertaAt?.toISOString() ?? null,
+    alertaMotivo: c.alertaMotivo,
     lastInboundAt: c.lastInboundAt?.toISOString() ?? null,
     lastMessageAt: c.lastMessageAt?.toISOString() ?? null,
     unreadCount: c.unreadCount,

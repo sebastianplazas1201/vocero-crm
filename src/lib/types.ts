@@ -11,6 +11,9 @@ export type ConversationDto = {
   aiEnabled: boolean;
   handoffAt: string | null;
   handoffReason: string | null;
+  /** Ana pidió revisión sin pausarse. */
+  alertaAt?: string | null;
+  alertaMotivo?: string | null;
   lastInboundAt: string | null;
   lastMessageAt: string | null;
   unreadCount: number;

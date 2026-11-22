@@ -1,0 +1,44 @@
+{
+  "proteinas": {
+    "cuerpo": "Elige la proteína de tu cena",
+    "boton": "Ver proteínas",
+    "filas": [
+      { "titulo": "Lomo glaseado en piña", "descripcion": "Lomo de cerdo glaseado en piña, panela y especias" },
+      { "titulo": "Lomo relleno manzana", "descripcion": "Lomo de cerdo relleno de manzana, ciruelas y nueces" },
+      { "titulo": "Lomo relleno pimentón", "descripcion": "Lomo de cerdo relleno de pimentón, tocineta y queso" },
+      { "titulo": "Lomo salsa de ciruelas", "descripcion": "Lomo de cerdo en salsa de ciruelas pasas y vino" },
+      { "titulo": "Pollo relleno de piña", "descripcion": "Pollo relleno de piña calada, tocineta, cerdo y aceitunas" },
+      { "titulo": "Pollo relleno de res", "descripcion": "Pollo relleno de res, aceitunas y frutos secos" },
+      { "titulo": "Bondiola finas hierbas", "descripcion": "Bondiola de cerdo a las finas hierbas" },
+      { "titulo": "Bondiola salsa de café", "descripcion": "Bondiola de cerdo en salsa de café y panela" }
+    ]
+  },
+  "acompanamiento-1": {
+    "cuerpo": "Elige tu primer acompañamiento",
+    "boton": "Primer acompañ.",
+    "filas": [
+      { "titulo": "Arroz navideño", "descripcion": "Tocineta, almendras y pasas" },
+      { "titulo": "Arroz hindú", "descripcion": "Ajonjolí y curry" },
+      { "titulo": "Arroz verde", "descripcion": "Albahaca, espinaca y cilantro" },
+      { "titulo": "Papas duquesa", "descripcion": "Puré redondo con queso" },
+      { "titulo": "Papas baby caramelizadas", "descripcion": "Con romero, ajo y miel" },
+      { "titulo": "Papas navideñas", "descripcion": "Con salvia y paprika" },
+      { "titulo": "Ensalada Waldorf", "descripcion": "Manzana, apio y nueces" },
+      { "titulo": "Ensalada repollo morado", "descripcion": "Con zanahoria y manzana" },
+      { "titulo": "Ensalada verde navideña", "descripcion": "Mix de lechugas con pera" }
+    ]
+  },
+  "acompanamiento-2": {
+    "cuerpo": "Elige tu segundo acompañamiento",
+    "boton": "Segundo acompañ.",
+    "copia": "acompanamiento-1"
+  },
+  "salsa": {
+    "cuerpo": "Elige tu salsa (una por pedido)",
+    "boton": "Ver salsas",
+    "filas": [
+      { "titulo": "Tradicional de ciruelas", "descripcion": "Salsa tradicional de ciruelas" },
+      { "titulo": "BBQ de frutas ácidas", "descripcion": "BBQ de frutas ácidas" }
+    ]
+  }
+}

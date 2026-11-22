@@ -441,7 +441,12 @@ async function persistOutbound(input: {
 
   await db
     .update(schema.conversation)
-    .set({ lastMessageAt: new Date(), updatedAt: new Date() })
+    .set({
+      lastMessageAt: new Date(),
+      updatedAt: new Date(),
+      // Respondió una persona: la alerta de Ana queda atendida.
+      ...(input.origin === "operator" ? { alertaAt: null, alertaMotivo: null } : {}),
+    })
     .where(eq(schema.conversation.id, input.conversationId));
 
   publish(input.organizationId, {

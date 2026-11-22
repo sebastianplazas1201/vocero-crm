@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { notaDelSistema } from "@/server/marcas-agente";
+import { marcarAlerta, notaDelSistema } from "@/server/marcas-agente";
 import { getDb, schema } from "@/lib/db";
 import { encolarDespacho } from "@/server/dispatch/outbox";
 import { iniciarWorker, programarTanda } from "@/server/dispatch/worker";
@@ -67,6 +67,7 @@ export async function despacharAlCerebro(
         conversationId,
         "🎙️ El cliente envió una nota de voz: escúchala y respóndele. Ana sigue con el próximo mensaje escrito."
       );
+      await marcarAlerta(organizationId, conversationId, "Nota de voz: escúchala y respóndele");
       return;
     }
 

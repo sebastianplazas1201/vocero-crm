@@ -50,6 +50,7 @@ export function ConfirmarPedido({
   const [enviarWa, setEnviarWa] = useState(Boolean(conversationId));
   const [aviso, setAviso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [leyendo, setLeyendo] = useState(false);
 
   const inicial = useCallback(() => {
     const total = num(ficha.pedido_total);
@@ -71,6 +72,29 @@ export function ConfirmarPedido({
   useEffect(() => {
     void cargar();
   }, [cargar]);
+
+  /** En la bandeja: la IA lee el chat y llena el pedido; la ficha es el respaldo. */
+  async function abrir() {
+    const base = inicial();
+    setF(base);
+    setAbierto(true);
+    if (!conversationId) return;
+    setLeyendo(true);
+    const r = await fetch(`/api/conversations/${conversationId}/borrador-pedido`)
+      .then((x) => (x.ok ? x.json() : null))
+      .catch(() => null);
+    setLeyendo(false);
+    const b = r?.borrador;
+    if (!b) return;
+    setF((actual) => ({
+      cliente: b.cliente || actual.cliente,
+      lineas: Array.isArray(b.lineas) && b.lineas.length ? b.lineas.join("\n") : actual.lineas,
+      fechaEntrega: b.fechaEntrega || actual.fechaEntrega,
+      entrega: b.entrega || actual.entrega,
+      total: b.total ? String(Math.round(b.total)) : actual.total,
+      abono: b.abono ? String(Math.round(b.abono)) : actual.abono || (b.total ? String(Math.round(b.total / 2)) : ""),
+    }));
+  }
 
   async function guardar() {
     setEnviando(true);
@@ -141,20 +165,15 @@ export function ConfirmarPedido({
       )}
       {aviso && <p className="mb-2 text-[12px] text-brand-text">{aviso}</p>}
       {!abierto ? (
-        <Button
-          size="sm"
-          onClick={() => {
-            setF(inicial());
-            setAbierto(true);
-          }}
-        >
+        <Button size="sm" onClick={() => void abrir()}>
           {conversationId ? "Confirmar pedido" : "Nuevo pedido"}
         </Button>
       ) : (
         <div className="space-y-2">
+          {leyendo && <p className="text-[12px] text-text-3">Leyendo el pedido del chat…</p>}
           {campo("cliente", "Nombre del cliente")}
           <label className="block text-[12px] text-text-3">
-            Pedido (una línea por producto: «Cena para 5 personas», «P2 Lomo…», «A1 Arroz…»)
+            Pedido (una línea por producto)
             <Textarea value={f.lineas} onChange={(e) => setF({ ...f, lineas: e.target.value })} rows={6} className="mt-1" />
           </label>
           {campo("fechaEntrega", "Fecha de entrega", { placeholder: "24 de diciembre" })}

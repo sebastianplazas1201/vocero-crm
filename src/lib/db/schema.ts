@@ -374,6 +374,9 @@ export const conversation = pgTable(
      */
     channelThreadRef: text("channel_thread_ref"),
     aiEnabled: boolean("ai_enabled").notNull().default(true),
+    /** Ana pidió que alguien revise SIN pausarse (alerta, pago, nota de voz). */
+    alertaAt: timestamp("alerta_at"),
+    alertaMotivo: text("alerta_motivo"),
     handoffAt: timestamp("handoff_at"),
     handoffReason: text("handoff_reason", {
       // 008: manual_reply = el dueño respondió desde la app del teléfono.
