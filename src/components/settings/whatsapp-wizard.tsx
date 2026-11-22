@@ -264,7 +264,7 @@ function ConnectForm({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const canTest = wabaId.trim() && phoneNumberId.trim() && token.trim();
+  const canTest = wabaId.trim() && phoneNumberId.trim() && (token.trim() || existing);
 
   async function test() {
     setTesting(true);

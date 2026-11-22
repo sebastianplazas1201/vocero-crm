@@ -40,7 +40,8 @@ export const GET = withAuth(async (session) => {
 const putSchema = z.object({
   wabaId: z.string().trim().min(1),
   phoneNumberId: z.string().trim().min(1),
-  token: z.string().trim().min(1),
+  /** Vacío: se conserva el token guardado. */
+  token: z.string().trim().optional(),
   /**
    * 065 — La Cuenta de mensajes del split de 2026 (plantillas y pago).
    * Ausente: se conserva la guardada, o se intenta descubrir. Vacía: se borra.
@@ -58,8 +59,11 @@ const putSchema = z.object({
  * reintentar (o pegar la URL a mano, que sigue a la vista).
  */
 export const PUT = withAuth(async (session, req: Request) => {
-  const body = await parseBody(req, putSchema);
-  if (!body.ok) return body.response;
+  const parsed = await parseBody(req, putSchema);
+  if (!parsed.ok) return parsed.response;
+  const token = parsed.data.token || (await getCredentialsByOrg(session.organizationId))?.token;
+  if (!token) return apiError(422, "invalid_body", "Pega el token de acceso");
+  const body = { data: { ...parsed.data, token } };
 
   const check = await testConnection(body.data.phoneNumberId, body.data.token);
   if (!check.ok) {
