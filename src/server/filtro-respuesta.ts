@@ -33,7 +33,7 @@ export function esRellenoGenerico(texto: string): boolean {
 /** 12 h: la misma frontera que usa el despacho para «la conversación empieza». */
 const EN_CURSO_MS = 12 * 60 * 60 * 1000;
 
-/** La IA ya le escribió hace poco: no es momento de volver a saludar. */
+/** Ana ya le escribió hace poco: no es momento de volver a saludar (un «Hola» de una persona no cuenta). */
 export async function conversacionEnCurso(organizationId: string, conversationId: string): Promise<boolean> {
   const [ultima] = await getDb()
     .select({ id: schema.message.id })
@@ -43,6 +43,7 @@ export async function conversacionEnCurso(organizationId: string, conversationId
         eq(schema.message.organizationId, organizationId),
         eq(schema.message.conversationId, conversationId),
         eq(schema.message.direction, "out"),
+        eq(schema.message.aiGenerated, true),
         gt(schema.message.createdAt, new Date(Date.now() - EN_CURSO_MS))
       )
     )

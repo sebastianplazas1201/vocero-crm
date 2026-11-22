@@ -81,12 +81,12 @@ describe("/api/bot/llm — quién entra", () => {
 });
 
 describe("/api/bot/llm — el reenvío", () => {
-  it("reenvía el cuerpo TAL CUAL a {base}/v1/{ruta} con la llave del negocio, y devuelve la respuesta tal cual", async () => {
+  it("reenvía el cuerpo (con max_tokens topado) a {base}/v1/{ruta} con la llave del negocio, y devuelve la respuesta tal cual", async () => {
     const res = await peticion({ authorization: `Bearer ${LLAVE_BOT}` });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://proveedor.test/api/v1/chat/completions");
-    expect(init.body).toBe(CUERPO);
+    expect(JSON.parse(init.body as string)).toEqual({ ...JSON.parse(CUERPO), max_tokens: 4000 });
     expect((init.headers as Record<string, string>).Authorization).toBe(`Bearer ${LLAVE_IA}`);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ choices: [{ message: { content: "hola!" } }] });

@@ -30,9 +30,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ ruta: s
   const r = await pensarPorElCerebro({
     organizationId,
     ruta: ruta.map(encodeURIComponent).join("/"),
-    cuerpoCrudo: await req.text(),
+    cuerpoCrudo: topeDeTokens(await req.text()),
     contentType: req.headers.get("content-type"),
   });
   if (!r.ok) return apiError(r.status, r.code, r.message);
   return new Response(r.cuerpo, { status: r.status, headers: { "Content-Type": r.contentType } });
+}
+
+/**
+ * Sin `max_tokens`, OpenRouter reserva el máximo del modelo (131 072) y con
+ * poco saldo rechaza el turno con 402 aunque la respuesta real sea de 200
+ * tokens. Una respuesta de Ana nunca pasa de unos cientos: se topa.
+ */
+const TOPE = Number(process.env.LLM_MAX_TOKENS) > 0 ? Number(process.env.LLM_MAX_TOKENS) : 4000;
+function topeDeTokens(crudo: string): string {
+  try {
+    const cuerpo = JSON.parse(crudo) as Record<string, unknown>;
+    if (!cuerpo || typeof cuerpo !== "object" || Array.isArray(cuerpo)) return crudo;
+    for (const k of ["max_tokens", "max_completion_tokens"]) {
+      const v = cuerpo[k];
+      if (typeof v === "number" && v > TOPE) cuerpo[k] = TOPE;
+    }
+    if (typeof cuerpo.max_tokens !== "number" && typeof cuerpo.max_completion_tokens !== "number") cuerpo.max_tokens = TOPE;
+    return JSON.stringify(cuerpo);
+  } catch {
+    return crudo;
+  }
 }

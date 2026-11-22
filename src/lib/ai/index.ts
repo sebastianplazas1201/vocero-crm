@@ -172,7 +172,8 @@ async function callProvider(
         Authorization: `Bearer ${provider.token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ model, messages }),
+      // Sin tope, OpenRouter reserva el máximo del modelo y con poco saldo da 402.
+      body: JSON.stringify({ model, messages, max_tokens: 4000 }),
       signal: controller.signal,
     });
     if (!res.ok) {
