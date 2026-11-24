@@ -37,6 +37,7 @@ export function LeadDrawer({
   onMoveStage,
   onAmount,
   onPriority,
+  onDeleted,
 }: {
   lead: BoardLead;
   stages: StageDto[];
@@ -47,6 +48,8 @@ export function LeadDrawer({
   onMoveStage: (stageId: string) => void;
   onAmount: (cents: number | null) => void;
   onPriority: (value: PriorityValue | null) => void;
+  /** El contacto se eliminó: sale del tablero. */
+  onDeleted?: () => void;
 }) {
   const [ficha, setFicha] = useState<FichaDto>({});
   // 018: de qué anuncio llegó; null si escribió por su cuenta.
@@ -284,6 +287,26 @@ export function LeadDrawer({
 
           {/* Qué se sabe */}
           <FichaPanel ficha={ficha} onSave={guardarFicha} />
+
+          {/* Eliminar (contactos de prueba o duplicados) */}
+          <section className="p-4">
+            <button
+              className="text-[12px] text-red-500 hover:underline"
+              onClick={async () => {
+                const nombre = lead.contact.name || "este contacto";
+                if (!confirm(`¿Eliminar a ${nombre}? Se borran su conversación, mensajes y pedidos. No se puede deshacer y no se le avisa al cliente.`)) return;
+                const r = await fetch(`/api/contacts/${contactId}`, { method: "DELETE" }).catch(() => null);
+                if (!r?.ok) {
+                  const j = await r?.json().catch(() => null);
+                  alert(j?.error?.message ?? "No se pudo eliminar el contacto");
+                  return;
+                }
+                onDeleted?.();
+              }}
+            >
+              Eliminar contacto
+            </button>
+          </section>
         </div>
       </aside>
     </>

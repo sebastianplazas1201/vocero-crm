@@ -228,6 +228,10 @@ export function PipelineClient() {
           onMoveStage={(stageId) => moverDesdeCajon(abierto.id, stageId)}
           onAmount={(cents) => void guardarMonto(abierto.id, cents)}
           onPriority={(p) => void guardarPrioridad(abierto.id, p)}
+          onDeleted={() => {
+            setLeads((prev) => prev.filter((l) => l.id !== abierto.id));
+            setAbiertoId(null);
+          }}
         />
       )}
 

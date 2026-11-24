@@ -1,3 +1,4 @@
+import { iniciarSeguimientos } from "@/server/seguimientos";
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { mediaDirStatus } from "@/server/media-dir";
@@ -100,6 +101,7 @@ export function resumeDispatch(): void {
   if (config.active) {
     iniciarWorker();
     void tanda();
+    iniciarSeguimientos();
     console.log(`[boot] despacho al cerebro activo → ${config.host}`);
     return;
   }

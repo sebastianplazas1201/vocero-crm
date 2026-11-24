@@ -51,3 +51,24 @@ export async function conversacionEnCurso(organizationId: string, conversationId
     .limit(1);
   return Boolean(ultima);
 }
+
+/**
+ * ¿El cliente escribió hace poco? Un mensaje del cerebro sin un entrante
+ * reciente es un seguimiento suyo: esos los manda el CRM (`seguimientos.ts`),
+ * con horario y dentro de la ventana de 24 h.
+ */
+export async function clienteEscribioHacePoco(organizationId: string, conversationId: string, ms = 30 * 60_000): Promise<boolean> {
+  const [ultimo] = await getDb()
+    .select({ createdAt: schema.message.createdAt })
+    .from(schema.message)
+    .where(
+      and(
+        eq(schema.message.organizationId, organizationId),
+        eq(schema.message.conversationId, conversationId),
+        eq(schema.message.direction, "in")
+      )
+    )
+    .orderBy(desc(schema.message.createdAt))
+    .limit(1);
+  return Boolean(ultimo && Date.now() - ultimo.createdAt.getTime() <= ms);
+}

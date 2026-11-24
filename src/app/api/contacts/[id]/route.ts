@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { apiError, parseBody, withAuth } from "@/lib/api";
+import { canConfigure } from "@/lib/auth/roles";
 import { getDb, schema } from "@/lib/db";
 import { scoped } from "@/lib/db/tenant";
 import {
@@ -114,4 +115,22 @@ export const PATCH = withAuth(async (session, req: Request, ctx: Params) => {
   return Response.json({
     contact: serializeContact(updated[0], null, null, cuentaComoAnuncio(anuncio)),
   });
+});
+
+/**
+ * Elimina el contacto con todo lo suyo (conversaciones, mensajes, lead,
+ * pedidos): las llaves foráneas lo borran en cascada. Para contactos de
+ * prueba o duplicados. No se le avisa al cliente.
+ */
+export const DELETE = withAuth(async (session, _req: Request, ctx: Params) => {
+  const { id } = await ctx.params;
+  if (!canConfigure(session.role)) {
+    return apiError(403, "forbidden", "Solo un administrador puede eliminar contactos");
+  }
+  const borrados = await getDb()
+    .delete(schema.contact)
+    .where(scoped(schema.contact.organizationId, session.organizationId, eq(schema.contact.id, id)))
+    .returning({ id: schema.contact.id });
+  if (!borrados.length) return apiError(404, "not_found", "Contacto no encontrado");
+  return Response.json({ ok: true });
 });

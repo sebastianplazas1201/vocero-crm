@@ -11,7 +11,7 @@ import { SendError, sendText } from "@/server/inbox/send";
 import { guardarRespuestaDePrueba } from "@/server/lab/sandbox";
 import { after } from "next/server";
 import { ejecutarMarcas, parsearMarcas } from "@/server/marcas-agente";
-import { conversacionEnCurso, esRellenoGenerico, quitarEmojis } from "@/server/filtro-respuesta";
+import { clienteEscribioHacePoco, conversacionEnCurso, esRellenoGenerico, quitarEmojis } from "@/server/filtro-respuesta";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +84,11 @@ export async function POST(req: Request) {
   ) {
     // Saludo repetido en mitad de la conversación: no sale.
     console.info(`[bot] relleno descartado en ${body.data.conversationId}: ${marcas.texto}`);
+    return Response.json({ messageId: null, status: "skipped" });
+  }
+  if (!conv.isTest && !(await clienteEscribioHacePoco(organizationId, body.data.conversationId))) {
+    // Seguimiento del cerebro: los envía el CRM con horario (seguimientos.ts).
+    console.info(`[bot] seguimiento del cerebro bloqueado en ${body.data.conversationId}`);
     return Response.json({ messageId: null, status: "skipped" });
   }
   if (conv.isTest) {
