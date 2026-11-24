@@ -1,3 +1,4 @@
+import { notificarMensajeNuevo } from "@/server/push";
 import { and, eq, sql } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { newId } from "@/lib/db/ids";
@@ -551,6 +552,14 @@ export async function ingestInboundMessage(input: {
   publish(organizationId, {
     type: "conversation.updated",
     data: { conversation: { id: conversation.id } },
+  });
+
+  void notificarMensajeNuevo({
+    organizationId,
+    conversationId: conversation.id,
+    nombre: contact.name ?? null,
+    texto: input.text,
+    tipo: input.type,
   });
 
   // 036 — Quien contesta es el cerebro conectado; sin él, una persona. El

@@ -1437,3 +1437,20 @@ export const pedido = pgTable(
   },
   (t) => [index("pedido_contacto_idx").on(t.organizationId, t.contactId, t.createdAt)]
 );
+
+/** Notificaciones push (Web Push) de cada navegador / iPhone que las activó. */
+export const suscripcionPush = pgTable(
+  "suscripcion_push",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("suscripcion_push_endpoint_idx").on(t.endpoint)]
+);

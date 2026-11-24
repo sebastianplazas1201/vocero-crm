@@ -87,3 +87,19 @@ self.addEventListener("notificationclick", (event) => {
     })()
   );
 });
+
+// Push del servidor (Web Push): llega aunque el CRM esté cerrado.
+self.addEventListener("push", (event) => {
+  let d = {};
+  try {
+    d = event.data ? event.data.json() : {};
+  } catch {}
+  event.waitUntil(
+    self.registration.showNotification(d.titulo || "Nuevo mensaje", {
+      body: d.cuerpo || "",
+      tag: d.tag || undefined,
+      renotify: true,
+      data: { url: d.url || "/inbox" },
+    })
+  );
+});

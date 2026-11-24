@@ -43,6 +43,7 @@ const prefixes = {
   conversationNote: "nota",
   pedido: "ped",
   imagenPedido: "imped",
+  suscripcionPush: "push",
 } as const;
 
 export type IdKind = keyof typeof prefixes;

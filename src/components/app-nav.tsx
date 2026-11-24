@@ -33,6 +33,7 @@ import {
   useDesbloquearAudio,
   useTituloNoLeidos,
 } from "@/components/avisos-de-mensajes";
+import { pushActivoAqui } from "@/components/push-cliente";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   cuerpoAviso,
@@ -181,7 +182,8 @@ export function AppNav({
       // El nombre sale de la Bandeja: una conversación del Laboratorio no está
       // en la lista y no avisa.
       const conv = avisar ? lista?.find((c) => c.id === conversationId) : undefined;
-      if (conv) {
+      // Con push activo, el aviso ya lo manda el servidor: no se duplica.
+      if (conv && !pushActivoAqui()) {
         void mostrarAvisoSistema({
           titulo: conv.contact.name,
           cuerpo: cuerpoAviso(m),
