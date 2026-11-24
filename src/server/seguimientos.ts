@@ -12,7 +12,8 @@ import { quitarEmojis } from "@/server/filtro-respuesta";
  *   dentro de la ventana de 24 h de WhatsApp.
  * - Solo entre 6:00 a. m. y 9:00 p. m. (hora de Bogotá). Si la hora cae fuera,
  *   se usa la más cercana entre «antes de las 9:00 p. m.» y «6:00 a. m.» que
- *   quede dentro de la ventana; si ninguna cabe, no se envía.
+ *   quede dentro de la ventana; si ninguna cabe, la hora permitida más tardía
+ *   posible dentro de la ventana.
  * - Los del cerebro (Nea) se bloquean en `/api/bot/messages`: los manda el CRM.
  *
  * Un seguimiento enviado = un mensaje de la IA escrito más de 30 min después
@@ -56,9 +57,29 @@ export function ajustarAHorario(objetivo: number, min: number, max: number): num
 
 /** Cuándo toca el seguimiento `n` (1 o 2), o null si no cabe. */
 export function horaDelSeguimiento(n: 1 | 2, ultimoCliente: number, primeroEnviado: number | null): number | null {
-  if (n === 1) return ajustarAHorario(ultimoCliente + 12 * H, ultimoCliente + 2 * H, ultimoCliente + 22 * H);
+  if (n === 1)
+    return (
+      ajustarAHorario(ultimoCliente + 12 * H, ultimoCliente + 2 * H, ultimoCliente + 22 * H) ??
+      ultimaHoraPermitida(ultimoCliente + H, ultimoCliente + 22 * H)
+    );
+  const max = ultimoCliente + 23 * H + 45 * MIN;
   const min = Math.max((primeroEnviado ?? ultimoCliente) + 2 * H, ultimoCliente + 13 * H);
-  return ajustarAHorario(ultimoCliente + 23 * H, min, ultimoCliente + 23 * H + 45 * MIN);
+  return (
+    ajustarAHorario(ultimoCliente + 23 * H, min, max) ??
+    // No cabe con el espaciado ideal: la hora permitida más tardía que quede
+    // dentro de la ventana y después del primer seguimiento.
+    ultimaHoraPermitida((primeroEnviado ?? ultimoCliente) + H, max)
+  );
+}
+
+/** La hora más tardía en horario (6am–9pm) dentro de (desde, hasta], o null. */
+export function ultimaHoraPermitida(desde: number, hasta: number): number | null {
+  if (hasta <= desde) return null;
+  if (permitido(hasta)) return hasta;
+  const dia = inicioDelDia(hasta);
+  const h = horaBogota(hasta);
+  const t = (h >= HASTA ? dia : dia - 24 * H) + HASTA * H - 5 * MIN;
+  return t > desde ? t : null;
 }
 
 const salida = z.object({ mensaje: z.string().min(1).max(600) });

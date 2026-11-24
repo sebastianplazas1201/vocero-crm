@@ -41,3 +41,22 @@ describe("seguimientos", () => {
     expect(ajustarAHorario(bog(24, 23), bog(24, 22), bog(24, 23, 30))).toBeNull();
   });
 });
+
+describe("seguimientos fuera de horario y de ventana", () => {
+  it("cliente a las 5 a. m.: el 2.º sale a la hora permitida más tardía (8:55 p. m.)", () => {
+    const tIn = bog(24, 5);
+    const s1 = horaDelSeguimiento(1, tIn, null)!;
+    expect(horaLocal(s1)).toBe("17:00");
+    const s2 = horaDelSeguimiento(2, tIn, s1)!;
+    expect(horaLocal(s2)).toBe("20:55");
+    expect(s2).toBeGreaterThan(s1);
+  });
+  it("siempre hay hora para los dos seguimientos", () => {
+    for (let h = 0; h < 24; h++) {
+      const tIn = bog(24, h, 17);
+      const s1 = horaDelSeguimiento(1, tIn, null);
+      expect(s1).not.toBeNull();
+      expect(horaDelSeguimiento(2, tIn, s1)).not.toBeNull();
+    }
+  });
+});
