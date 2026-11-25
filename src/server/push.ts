@@ -1,5 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
-import webpush from "web-push";
+import * as webpushNs from "web-push";
+
+// En el bundle de Next el módulo CJS llega sin `default`: se toma el que exista.
+const webpush = ((webpushNs as unknown as { default?: typeof webpushNs }).default ?? webpushNs) as typeof webpushNs;
 import { getDb, schema } from "@/lib/db";
 
 /**

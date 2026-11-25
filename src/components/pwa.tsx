@@ -29,6 +29,18 @@ export function RegistrarServiceWorker() {
       // Sin service worker Vocero funciona igual, en la pestaña.
     });
   }, []);
+
+  // En el iPhone la app instalada se congela al salir: al volver tras un rato,
+  // la conexión en vivo quedó muerta y los mensajes no se ven. Se recarga.
+  useEffect(() => {
+    let oculta = 0;
+    const cambio = () => {
+      if (document.visibilityState === "hidden") oculta = Date.now();
+      else if (oculta && Date.now() - oculta > 20_000) window.location.reload();
+    };
+    document.addEventListener("visibilitychange", cambio);
+    return () => document.removeEventListener("visibilitychange", cambio);
+  }, []);
   return null;
 }
 
