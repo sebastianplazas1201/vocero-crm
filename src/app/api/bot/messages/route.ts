@@ -15,7 +15,6 @@ import {
   clienteEscribioHacePoco,
   conversacionEnCurso,
   esRellenoGenerico,
-  humanoIntervinoHacePoco,
   quitarEmojis,
 } from "@/server/filtro-respuesta";
 
@@ -95,11 +94,6 @@ export async function POST(req: Request) {
   if (!conv.isTest && !(await clienteEscribioHacePoco(organizationId, body.data.conversationId))) {
     // Seguimiento del cerebro: los envía el CRM con horario (seguimientos.ts).
     console.info(`[bot] seguimiento del cerebro bloqueado en ${body.data.conversationId}`);
-    return Response.json({ messageId: null, status: "skipped" });
-  }
-  if (!conv.isTest && (await humanoIntervinoHacePoco(organizationId, body.data.conversationId))) {
-    // El equipo está atendiendo este chat: Ana no se mete (caso Aleja).
-    console.info(`[bot] equipo atendiendo, IA en silencio en ${body.data.conversationId}`);
     return Response.json({ messageId: null, status: "skipped" });
   }
   if (conv.isTest) {
