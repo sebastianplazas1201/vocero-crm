@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, inArray } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 
 /**
@@ -71,4 +71,34 @@ export async function clienteEscribioHacePoco(organizationId: string, conversati
     .orderBy(desc(schema.message.createdAt))
     .limit(1);
   return Boolean(ultimo && Date.now() - ultimo.createdAt.getTime() <= ms);
+}
+
+/** Tras un mensaje del equipo, Ana se calla este rato para no pisarlo. */
+export const PAUSA_TRAS_HUMANO_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * ¿Una persona del equipo escribió en este chat hace poco (desde el CRM o
+ * desde el teléfono)? Si sí, la IA no responde: dos voces a la vez confunden
+ * al cliente. Las plantillas (campañas) no cuentan.
+ */
+export async function humanoIntervinoHacePoco(
+  organizationId: string,
+  conversationId: string,
+  ms = PAUSA_TRAS_HUMANO_MS
+): Promise<boolean> {
+  const [ultimo] = await getDb()
+    .select({ id: schema.message.id })
+    .from(schema.message)
+    .where(
+      and(
+        eq(schema.message.organizationId, organizationId),
+        eq(schema.message.conversationId, conversationId),
+        eq(schema.message.direction, "out"),
+        eq(schema.message.aiGenerated, false),
+        inArray(schema.message.origin, ["operator", "manual"]),
+        gt(schema.message.createdAt, new Date(Date.now() - ms))
+      )
+    )
+    .limit(1);
+  return Boolean(ultimo);
 }
