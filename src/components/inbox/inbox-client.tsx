@@ -1,5 +1,7 @@
 "use client";
 
+import { QuienSigue } from "./quien-sigue";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronLeft, PanelRight } from "lucide-react";
@@ -70,8 +72,24 @@ export function InboxClient({
   const [pending, setPending] = useState<PendingOut[]>([]);
   // 039: el mensaje al que se está respondiendo citando.
   const [replyTo, setReplyTo] = useState<MessageDto | null>(null);
-  // Tras responder una persona: ¿sigue Ana o sigue el equipo? (id de la conversación)
-  const [preguntarQuienSigue, setPreguntarQuienSigue] = useState<string | null>(null);
+  // «Ana continúa» se recuerda por el último mensaje del equipo: si el equipo
+  // vuelve a escribir, la pregunta vuelve a salir.
+  const [decididos, setDecididos] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem("vocero.quienSigue") ?? "{}") as Record<string, string>;
+    } catch {
+      return {};
+    }
+  });
+  const anaContinua = useCallback((conversationId: string, mensajeId: string) => {
+    setDecididos((prev) => {
+      const next = { ...prev, [conversationId]: mensajeId };
+      try {
+        window.localStorage.setItem("vocero.quienSigue", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
   // Arranca cerrado: en pantallas angostas el panel de detalles es un cajón
   // ENCIMA del hilo, así que abrirlo por defecto taparía la conversación. El
   // efecto de abajo lo abre solo si de veras hay tres columnas de ancho.
@@ -510,30 +528,18 @@ export function InboxClient({
                 </button>
               )}
             </header>
-            {preguntarQuienSigue === selected.id &&
-              (selected as { aiEnabled?: boolean }).aiEnabled !== false &&
-              !(selected as { handoffAt?: unknown }).handoffAt && (
-                <div className="flex flex-wrap items-center gap-2 border-b border-border bg-surface-2 px-4 py-2 text-sm">
-                  <span className="flex-1 text-text-2">Respondiste tú. ¿Quién sigue con este cliente?</span>
-                  <button
-                    type="button"
-                    onClick={() => setPreguntarQuienSigue(null)}
-                    className="rounded-full border border-border-strong px-3 py-1 font-medium hover:border-text-3"
-                  >
-                    Ana continúa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreguntarQuienSigue(null);
-                      void patchConversation({ aiEnabled: false });
-                    }}
-                    className="rounded-full bg-primary px-3 py-1 font-medium text-primary-foreground hover:opacity-90"
-                  >
-                    Sigo yo
-                  </button>
-                </div>
-              )}
+            <QuienSigue
+              conversation={selected}
+              messages={messages}
+              decidido={decididos[selected.id]}
+              onAnaContinua={(mid) => anaContinua(selected.id, mid)}
+              onSigoYo={() => void patchConversation({ aiEnabled: false })}
+              onDevolverAna={() =>
+                void patchConversation(
+                  (selected as { handoffAt?: unknown }).handoffAt ? { reactivate: true } : { aiEnabled: true }
+                )
+              }
+            />
             <Composer
               // 028: uno por conversación. Sin la llave, el borrador, el adjunto
               // elegido y el panel abierto pasaban a la siguiente conversación.
@@ -542,15 +548,10 @@ export function InboxClient({
               // a él: el aviso «Imagen reenviada a…» no pasa a otra.
               key={selected.id}
               conversation={selected}
-              onSend={async (t, cita) => {
-                const err = await sendText(t, cita);
-                if (!err && selectedIdRef.current) setPreguntarQuienSigue(selectedIdRef.current);
-                return err;
-              }}
+              onSend={sendText}
               replyTo={replyTo?.conversationId === selected.id ? replyTo : null}
               onReplyChange={setReplyTo}
               onSent={() => {
-                if (selectedIdRef.current) setPreguntarQuienSigue(selectedIdRef.current);
                 if (selectedIdRef.current)
                   void refetchMessages(selectedIdRef.current);
                 void refetchConversations();
